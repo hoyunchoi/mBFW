@@ -1,2 +1,2 @@
 # mBFW-Git
-Version control for Modified BFW model
+This is repository for Modified BFW model.
