@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <map>
 
 #include "/pds/pds172/hoyun1009/library/linearAlgebra.hpp"
 #include "/pds/pds172/hoyun1009/library/randomNumber.hpp"
@@ -10,7 +12,148 @@
 #include "parameters.hpp"
 #include "fileName.hpp"
 
-void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize, const int &t_coreNum, double t_precision){ 
+namespace mBFW{
+    //! Declaration of input variables
+    int networkSize;
+    int ensembleSize;
+    int coreNum;
+    double acceptanceThreshold;
+    double precision;
+    double degenerated;
+
+    //! Declaration of pre-defined variables at "parameters.hpp"
+    double m_c;
+    std::vector<double> time_orderParameterDistribution, orderParameter_clusterSizeDistribution;
+    std::vector<double> maxAcceptanceExponent;
+
+    //! Declaration of output variables
+    //* X[time] = value of observable X at time
+    std::vector<double> orderParameter;
+    std::vector<double> secondGiant;
+    std::vector<double> meanClusterSize;
+    std::vector<double> interEventTime;
+    std::vector<int> sampledInterEventTime;
+    std::vector<double> maxAcceptance;
+    std::vector<int> sampledMaxAcceptance;
+
+    //* orderParameterDistribution[time] : distribution of rounded order parameter at (rounded time)=(time)
+    std::map<double, std::vector<double>> orderParameterDistributon;
+
+    //* clusterSizeDistribution[orderParameter] : cluster size distribution at (rounded order parameter)=(orderParameter)
+    //* sampledClusterSizeDistribution[orderParameter] : number of samples for each rounded order parameter
+    std::map<double, std::vector<double>> clusterSizeDistribution;
+    std::map<double, int> sampledClusterSizeDistribution;
+
+    //* interEventTimeDistribution['before'] : inter event time distribution before jump (order parameter < 0.05)
+    //* interEventTimeDistribution['during'] : inter event time distribution during jump (0.05 < order parameter < m_c)
+    std::map<std::string, std::vector<double>> interEventTimeDistribution;
+
+    //* detaMDistribution['before'] : jump size of maximum cluster size distribution before jump
+    //* detaMDistribution['during'] : jump size of maximum cluster size distribution during jump
+    std::map<std::string, std::vector<double>> deltaMDistribution;
+
+    //* ageDistribution['before'] : age distribution before jump (order parameter < 0.05)
+    //* ageDistribution['during'] : age distribution during jump (0.05 < order parameter < m_c)
+    std::map<std::string, std::vector<double>> ageDistribution;
+
+    //* maxAcceptanceDistribution['before'] : max acceptance distribution befeore jump (order paramter < 0.05)
+    //* maxAcceptanceDistribution['during'] : max acceptance distribution during jump (0.05 < order paramter < m_c)
+    std::map<std::string, std::vector<double>> maxAcceptanceDistribution;
+
+    //* X_maxAcceptance[x] : average max acceptance at X=x before jump
+    //* sampledX_maxAcceptance[x] : number of samples for each X=x
+    std::vector<double> interEventTime_maxAcceptance;
+    std::vector<int> sampledInterEventTime_maxAcceptance;
+    std::vector<double> upperBound_maxAcceptance;
+    std::vector<int> sampledUpperBound_maxAcceptance;
+    std::vector<double> deltaUpperBound_maxAcceptance;
+    std::vector<int> sampledDeltaUpperbound_maxAcceptance;
+
+    //* maxAcceptance_X[deltaA] : average X at (log binned max acceptance)=(deltaA)
+
+
+
+    void setParameters(const int& t_networkSize, const int& t_ensembleSize, const int& t_coreNum, const double& t_acceptanceThreshold, const double t_precision){
+        //! Input variables
+        networkSize = t_networkSize;
+        ensembleSize = t_ensembleSize;
+        coreNum = t_coreNum;
+        acceptanceThreshold = t_acceptanceThreshold;
+        t_networkSize < t_precision ? precision = t_networkSize : precision = t_precision;
+
+        //! Pre-defined variables
+        std::tie(time_orderParameterDistribution, orderParameter_clusterSizeDistribution, m_c) = getParameters(networkSize, acceptanceThreshold);
+        degenerated=t_networkSize/t_precision;
+        const int maxAcceptanceBinDelta = 0.01;
+        std::vector<double> maxAcceptanceExponent = linearAlgebra::;
+
+    // int binNum=80;
+    // std::vector<double> exponent;
+    // {
+    //     using namespace linearAlgebra;
+    //     exponent=linspace(-8,0,binNum+1);
+    // }
+    // std::vector<double> minX(binNum);
+    // std::vector<double> maxX(binNum);
+    // std::vector<std::vector<double>> acceptanceDistribution(binNum);
+    // for(int i=0; i<binNum; ++i){
+    //     minX[i]=pow(10,exponent[i]);
+    //     maxX[i]=pow(10,exponent[i+1]);
+    //     acceptanceDistribution[i]=std::vector<double>{sqrt(minX[i]*maxX[i]),0};
+    // }
+
+
+        //! Output variables (Observables)
+        //* time-X
+        orderParameter.resize(t_networkSize);
+        secondGiant.resize(t_networkSize);
+        meanClusterSize.resize(t_networkSize);
+        interEventTime.resize(t_networkSize);
+        sampledInterEventTime.resize(t_networkSize);
+        maxAcceptance.resize(t_networkSize);
+        sampledMaxAcceptance.resize(t_networkSize);
+
+        //* Distribution
+        for (const double& t : time_orderParameterDistribution){
+            orderParameterDistribution[t].resize(t_netorkSize);
+        }
+        for (const double& m : orderParameter_clusterSizeDistribution){
+            clusterSizeDistribution[m].resize(t_networkSize);
+            sampledClusterSizeDistribution[m] = 0;
+        }
+        interEventTimeDistribution['before'].resize(t_networkSize);
+        interEventTimeDistribution['during'].resize(t_networkSize);
+        deltaMDistribution['before'].resize(t_networkSize);
+        deltaMDistribution['during'].resize(t_networkSize);
+        ageDistribution['before'].resize(t_networkSize);
+        ageDistribution['during'].resize(t_networkSize);
+
+        maxAcceptanceDistribution['before'];
+
+        //* X_maxAcceptance
+        interEventTime_maxAcceptance.resize(t_networkSize);
+        sampledInterEventTime_maxAcceptance.resize(t_networkSize);
+        upperBound_MaxAcceptance.resize(t_networkSize);
+        sampledUpperBound_MaxAcceptance.resize(t_networkSize);
+        deltaUpperBound_MaxAcceptance.resize(t_networkSize);
+        sampledDeltaUpperbound_MaxAcceptance.resize(t_networkSize);
+
+        //* maxAcceptance_X
+
+
+
+
+    }
+
+
+    void run(){
+
+    }
+
+}
+
+
+void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize, const int &t_coreNum, double t_precision){
     if (t_networkSize<t_precision){
         t_precision=t_networkSize;
     }
@@ -21,14 +164,11 @@ void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize
 
     //* Cluster Size distribution at Order Parameter
     //* clusterSizeDistribution[i] : cluster size distribution at (rounded order parameter)=orderParameterOfClusterSizeDistribution[i]
-    std::vector<std::vector<double>> clusterSizeDistribution1(orderParameterOfClusterSizeDistribution.size());
-    std::vector<std::vector<double>> clusterSizeDistribution2(orderParameterOfClusterSizeDistribution.size());
-    for (auto &e : clusterSizeDistribution1){
-        e.resize(t_networkSize);
+    std::map<std::vector<double>> clusterSizeDistribution;
+    for (const double orderParameter : orderParameterOfClusterSizeDistirbution){
+        clusterSizeDistribution[orderParameter].resize(t_networkSize);
     }
-    for (auto &e : clusterSizeDistribution2){
-        e.resize(t_networkSize);
-    }
+
     std::vector<int> sampledClusterSizeDistribution(orderParameterOfClusterSizeDistribution.size());
 
     //* Order Parameter Distribution
@@ -96,20 +236,20 @@ void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize
     // std::vector<int> sampledPeriodAcceptance_DeltaK(binNum);
 
     //* period acceptance area distribution
-    const int binNum=180;
-    std::vector<double> exponent;
-    std::vector<std::vector<double>> periodAcceptanceAreaDistribution(binNum);
-    {
-        using namespace linearAlgebra;
-        exponent=linspace(-8,10,binNum+1);
-    }
-    std::vector<double> minX(binNum);
-    std::vector<double> maxX(binNum);
-    for(int i=0; i<binNum; ++i){
-        minX[i]=pow(10,exponent[i]);
-        maxX[i]=pow(10,exponent[i+1]);
-        periodAcceptanceAreaDistribution[i]=std::vector<double>{sqrt(minX[i]*maxX[i]),0};
-    }
+    // const int binNum=180;
+    // std::vector<double> exponent;
+    // std::vector<std::vector<double>> periodAcceptanceAreaDistribution(binNum);
+    // {
+    //     using namespace linearAlgebra;
+    //     exponent=linspace(-8,10,binNum+1);
+    // }
+    // std::vector<double> minX(binNum);
+    // std::vector<double> maxX(binNum);
+    // for(int i=0; i<binNum; ++i){
+    //     minX[i]=pow(10,exponent[i]);
+    //     maxX[i]=pow(10,exponent[i+1]);
+    //     periodAcceptanceAreaDistribution[i]=std::vector<double>{sqrt(minX[i]*maxX[i]),0};
+    // }
 
     //* Delta Acceptance
     //* x_DeltaAcceptance[i] : delta acceptance at x

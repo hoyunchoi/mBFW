@@ -10,6 +10,7 @@ int main(int argc, char *argv[]){
     const std::string machine=argv[4];
     const int coreNum=std::stoul(argv[5]);
 
+    //* Precision : 
     double precision;
     if(g==0.2){
         precision=1e3;
