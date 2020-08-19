@@ -21,7 +21,8 @@ int main(int argc, char *argv[]){
 
     //* Do mBFW
     auto start=std::chrono::system_clock::now();
-    mBFW(networkSize, g, ensembleSize, coreNum, precision);
+    mBFW::setParameters(networkSize, ensembleSize, g, precision, coreNum);
+    mBFW::run();
     std::chrono::duration<double> sec=std::chrono::system_clock::now()-start;
     printf(" %0.1fs for N=%.1e, g=%.1f, ensemble=%d-%d at %s\n", sec.count(),(double)networkSize, g, ensembleSize, coreNum, machine.c_str());
     return 0;
