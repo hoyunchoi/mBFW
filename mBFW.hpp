@@ -274,7 +274,6 @@ namespace mBFW{
                             }
                         }
 
-
                         //* Initialize variable for new k-period
                         updatedTime = time;
                         periodTime = 0;
