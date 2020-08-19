@@ -5,11 +5,10 @@
 #include <string>
 #include <map>
 
-#include "/pds/pds172/hoyun1009/library/linearAlgebra.hpp"
-#include "/pds/pds172/hoyun1009/library/randomNumber.hpp"
-#include "/pds/pds172/hoyun1009/library/Networks.hpp"
+#include "/pds/pds172/hoyun1009/library-Git/linearAlgebra.hpp"
+#include "/pds/pds172/hoyun1009/library-Git/randomNumber.hpp"
+#include "/pds/pds172/hoyun1009/library-Git/Networks.hpp"
 
-// #include "Network.hpp"
 #include "save.hpp"
 #include "parameters.hpp"
 #include "fileName.hpp"
