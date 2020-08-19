@@ -22,17 +22,20 @@ namespace mBFW{
     double degenerated;
 
     //! Declaration of pre-defined variables at "parameters.hpp"
-    double m_c;
+    double m_c, m_a;
     std::vector<double> time_orderParameterDistribution, orderParameter_clusterSizeDistribution;
+    double maxAcceptanceBinDelta;
     std::vector<double> maxAcceptanceExponent;
+    std::vector<double> minExponent, maxExponent, logBinnedMaxAcceptance;
+    int maxAcceptanceBinNum
 
     //! Declaration of output variables
     //* X[time] = value of observable X at time
     std::vector<double> orderParameter;
     std::vector<double> secondGiant;
     std::vector<double> meanClusterSize;
-    std::vector<double> interEventTime;
-    std::vector<int> sampledInterEventTime;
+    std::map<string, std::vector<double>> interEventTime;
+    std::map<string, std::vector<int>> sampledInterEventTime;
     std::vector<double> maxAcceptance;
     std::vector<int> sampledMaxAcceptance;
 
@@ -44,20 +47,20 @@ namespace mBFW{
     std::map<double, std::vector<double>> clusterSizeDistribution;
     std::map<double, int> sampledClusterSizeDistribution;
 
-    //* interEventTimeDistribution['before'] : inter event time distribution before jump (order parameter < 0.05)
-    //* interEventTimeDistribution['during'] : inter event time distribution during jump (0.05 < order parameter < m_c)
+    //* interEventTimeDistribution['before'] : inter event time distribution before jump (order parameter < m_a)
+    //* interEventTimeDistribution['during'] : inter event time distribution during jump (m_a < order parameter < m_c)
     std::map<std::string, std::vector<double>> interEventTimeDistribution;
 
     //* detaMDistribution['before'] : jump size of maximum cluster size distribution before jump
     //* detaMDistribution['during'] : jump size of maximum cluster size distribution during jump
     std::map<std::string, std::vector<double>> deltaMDistribution;
 
-    //* ageDistribution['before'] : age distribution before jump (order parameter < 0.05)
-    //* ageDistribution['during'] : age distribution during jump (0.05 < order parameter < m_c)
+    //* ageDistribution['before'] : age distribution before jump (order parameter < m_a)
+    //* ageDistribution['during'] : age distribution during jump (m_a < order parameter < m_c)
     std::map<std::string, std::vector<double>> ageDistribution;
 
-    //* maxAcceptanceDistribution['before'] : max acceptance distribution befeore jump (order paramter < 0.05)
-    //* maxAcceptanceDistribution['during'] : max acceptance distribution during jump (0.05 < order paramter < m_c)
+    //* maxAcceptanceDistribution['before'] : max acceptance distribution befeore jump (order paramter < m_a)
+    //* maxAcceptanceDistribution['during'] : max acceptance distribution during jump (m_a < order paramter < m_c)
     std::map<std::string, std::vector<double>> maxAcceptanceDistribution;
 
     //* X_maxAcceptance[x] : average max acceptance at X=x before jump
@@ -69,11 +72,7 @@ namespace mBFW{
     std::vector<double> deltaUpperBound_maxAcceptance;
     std::vector<int> sampledDeltaUpperbound_maxAcceptance;
 
-    //* maxAcceptance_X[deltaA] : average X at (log binned max acceptance)=(deltaA)
-
-
-
-    void setParameters(const int& t_networkSize, const int& t_ensembleSize, const int& t_coreNum, const double& t_acceptanceThreshold, const double t_precision){
+    void setParameters(const int& t_networkSize, const int& t_ensembleSize, const double& t_acceptanceThreshold, const double t_precision, const int& t_coreNum){
         //! Input variables
         networkSize = t_networkSize;
         ensembleSize = t_ensembleSize;
@@ -83,37 +82,34 @@ namespace mBFW{
 
         //! Pre-defined variables
         std::tie(time_orderParameterDistribution, orderParameter_clusterSizeDistribution, m_c) = getParameters(networkSize, acceptanceThreshold);
+        m_a = 0.05;
         degenerated=t_networkSize/t_precision;
-        const int maxAcceptanceBinDelta = 0.01;
-        std::vector<double> maxAcceptanceExponent = linearAlgebra::;
-
-    // int binNum=80;
-    // std::vector<double> exponent;
-    // {
-    //     using namespace linearAlgebra;
-    //     exponent=linspace(-8,0,binNum+1);
-    // }
-    // std::vector<double> minX(binNum);
-    // std::vector<double> maxX(binNum);
-    // std::vector<std::vector<double>> acceptanceDistribution(binNum);
-    // for(int i=0; i<binNum; ++i){
-    //     minX[i]=pow(10,exponent[i]);
-    //     maxX[i]=pow(10,exponent[i+1]);
-    //     acceptanceDistribution[i]=std::vector<double>{sqrt(minX[i]*maxX[i]),0};
-    // }
-
+        
+        maxAcceptanceBinDelta = 0.01;
+        maxAcceptanceExponent = linearAlgebra::arange(-8,0,maxAcceptanceBinDelta);
+        maxAcceptanceBinNum = maxAcceptanceExponent.size()-1;
+        minExponent.resize(maxAcceptanceBinNum);
+        maxExponent.resize(maxAcceptanceBinNum);
+        logBinnedMaxAcceptance.resize(maxAcceptanceBinNum);
+        for (int i=0; i<maxAcceptanceBinNum; ++i){
+            minExponent[i] = pow(10, maxAcceptanceExponent[i]);
+            maxExponent[i] = pow(10, maxAcceptanceExponent[i+1]);
+            logBinnedMaxAcceptance[i] = sqrt(minExponent[i] * maxExponent[i]);
+        }
 
         //! Output variables (Observables)
         //* time-X
         orderParameter.resize(t_networkSize);
         secondGiant.resize(t_networkSize);
         meanClusterSize.resize(t_networkSize);
-        interEventTime.resize(t_networkSize);
-        sampledInterEventTime.resize(t_networkSize);
+        interEventTime['before'].resize(t_networkSize);
+        interEventTime['during'].resize(t_networkSize);
+        sampledInterEventTime['before'].resize(t_networkSize);
+        sampledInterEventTime['during'].resize(t_networkSize);
         maxAcceptance.resize(t_networkSize);
         sampledMaxAcceptance.resize(t_networkSize);
 
-        //* Distribution
+        //* Distributions
         for (const double& t : time_orderParameterDistribution){
             orderParameterDistribution[t].resize(t_netorkSize);
         }
@@ -127,8 +123,8 @@ namespace mBFW{
         deltaMDistribution['during'].resize(t_networkSize);
         ageDistribution['before'].resize(t_networkSize);
         ageDistribution['during'].resize(t_networkSize);
-
-        maxAcceptanceDistribution['before'];
+        maxAcceptanceDistribution['before'].resize(maxAcceptanceBinNum);
+        maxAcceptanceDistribution['during'].resize(maxAcceptanceBinNum);
 
         //* X_maxAcceptance
         interEventTime_maxAcceptance.resize(t_networkSize);
@@ -137,16 +133,148 @@ namespace mBFW{
         sampledUpperBound_MaxAcceptance.resize(t_networkSize);
         deltaUpperBound_MaxAcceptance.resize(t_networkSize);
         sampledDeltaUpperbound_MaxAcceptance.resize(t_networkSize);
-
-        //* maxAcceptance_X
-
-
-
-
     }
 
-
     void run(){
+        for (int ensemble=0; ensemble<ensembleSize; ++ensemble){
+            //* Default values for one ensemble
+            Network model(networkSize);
+            int time, trialTime, upperBound=2;
+            int periodTime, periodTrialTime, peakTime, peakTrialTime, updatedTime;
+            double maxAcceptance, maxPeriodAcceptance;
+            bool fineNewNode = true;
+
+            //* Random integer generator for the algorithm
+            SNU::CNRC::RandomIntGenerator randomNode(0,t_networkSize-1);
+
+            //* Do rBFW algorithm until all clusters merge to one
+            while (model.getMaximumCluster()<t_networkSize){
+                //* Find new nodes
+                if (findNewNodes){
+                    //* Randomly choose new nodes
+                    do {
+                        node1 = randomNode();
+                        root1 = model.getRoot(node1);
+                        node2 = randomNode();
+                        root2 = model.getRoot(node2);
+                    }while (root1 == root2);
+
+                    //* choose two clusters of each node
+                    size1 = model.getClusterSize(root1);
+                    size2 = model.getClusterSize(root2);
+                }
+
+                //* Merge two clusters, update time
+                if (size1+size2 <= upperBound){
+                    model.merge(root1, root2);
+                    ++time;
+                    ++trialTime;
+                    ++periodTime;
+                    ++periodTrialTime;
+                    findNewNodes=true;                    
+                    const double exactOrderParameter=model.getMaximumCluster()/(double)t_networkSize;
+
+                    //* max acceptance
+                    if ((double)time/trialTime > maxAcceptance){
+                        peakTime = time;
+                        peakTrialTime = trialTime;
+                        maxAcceptance = (double)time/trialTime;
+                    }
+
+                    //! order parameter
+                    orderParameter[time] += exactOrderParameter;
+
+                    //! mean cluster size
+                    meanClusterSize[time] += model.meanCluster();
+
+                    //! second giant
+                    secondGiant[time] += model.getSecondGiant()/(double)t_networkSize;
+
+                    //! Age Distribution
+                    if (exactOrderParameter < m_a){
+                        for (auto& changedAge : model.getChangedAge()){
+                            ageDistribution['before'][changedAge[0]] += changedAge[1];
+                        }
+                    }
+                    else if (exactOrderParameter < m_c){
+                        for (auto& changedAge : model.getChangedAge()){
+                            ageDistribution['during'][changedAge[0]] += changedAge[1]
+                        }
+                    }
+
+                    //! order parameter distribution
+                    const double roundedTime=round(time/degenerated)/t_precision;
+                    auto it = std::find(time_orderParameterDistribution.begin(), time_orderParameterDistribution.end(), roundedTime);
+                    if (it != time_orderParameterDistribution.end()){
+                        ++orderParameterDistributon[*it][model.getMaximumCluster()];
+                    }
+
+
+                    //* End of k-period
+                    if (model.getMaximumClusterUpdated()){
+                        //! Cluster Size Distribution w.r.t. order parameter
+                        const double roundedOrderParameter=round(exactOrderParameter*t_precision)/t_precision;
+                        auto it = std::find(orderParameter_clusterSizeDistribution.begin(), orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
+                        if (it != orderParameter_clusterSizeDistribution.end()){
+                            ++sampledClusterSizeDistribution[*it];
+                            auto sortedCluster = model.getSortedCluster();
+                            for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
+                                clusterSizeDistribution[*it][it2->first] += it2->second/(double)networkSize;
+                            }    
+                        }
+
+                        //* Before jump
+                        if (exactOrderParameter < m_a){
+                            int currentInterEventTime = time-updatedTime;
+
+                            //! Inter Event Time Distribution
+                            ++interEventTimeDistribution['before'][currentInterEventTime];
+
+                            //! inter event time
+                            interEventTime['before'][time] += currentInterEventTime;
+                            ++sampledInterEventTime['before'][time];
+
+
+                        }//* End of before jump
+
+                        //* During jump
+                        else if(exactOrderParameter<m_c){
+                            int currentInterEventTime = time-updatedTime;
+
+                            //! Inter Event Time Distribution
+                            ++interEventTimeDistribution['during'][currentInterEventTime];
+
+                            //! inter event time
+                            interEventTime['during'][time] += currentInterEventTime;
+                            ++sampledInterEventTime['during'][time];
+                         
+                        }//* End of during jump
+
+                        //* Initialize variable for new k-period
+                        updatedTime = time;
+                        periodTime = 0;
+                        periodTrialTime = 0;
+                        maxAcceptance=0;
+                        maxPeriodAcceptance=0;
+                    }//* End of updating k-period
+                }
+                else if ((double)time/trialTime < acceptanceThreshold){
+                    ++upperBound;
+                    findNewNodes=false;
+                }
+                else{
+                    ++trialTime;
+                    ++periodTrialTime;
+                    findNewNodes=true;
+                } //* End of one step
+            
+            
+            }//* End of network growing
+
+
+
+
+        }//* End of one ensemble
 
     }
 
@@ -188,7 +316,7 @@ void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize
     std::vector<int> sampledOrderParameterAfter(t_networkSize);
 
     //* Inter Event Time Distribution
-    //* interEventTimeDistribution[0] : when m<0.05 (before jump), interEventTimeDistribution[1] : during jump
+    //* interEventTimeDistribution[0] : when m<m_a (before jump), interEventTimeDistribution[1] : during jump
     //* interEventTimeDistribution[0][i] : number of i inter event time
     std::vector<std::vector<double>> interEventTimeDistribution(2);
     interEventTimeDistribution[0].resize(t_networkSize);
@@ -206,7 +334,7 @@ void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize
     sampledInterEventTime.resize(t_networkSize);
 
     //* Delta m distribution
-    //* deltaMDistribution[0] : when m<0.05 (before jump), deltaMDistribution[1] : during jump
+    //* deltaMDistribution[0] : when m<m_a (before jump), deltaMDistribution[1] : during jump
     std::vector<std::vector<double>>deltaMDistribution(2);
     deltaMDistribution[0].resize(t_networkSize);
     deltaMDistribution[1].resize(t_networkSize);
@@ -340,7 +468,7 @@ void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize
 
                 //! Age Distribution
                 // for (auto& changedAge : model.getChangedAge()){
-                //     if (exactOrderParameter < 0.05){
+                //     if (exactOrderParameter < m_a){
                 //         ageDistribution[0][changedAge[0]]+=changedAge[1];
                 //     }
                 //     else if (exactOrderParameter < m_c){
@@ -392,7 +520,7 @@ void mBFW(const int &t_networkSize, const double &t_g, const int &t_ensembleSize
                     // ++sampledInterEventTime[time];
 
                     //* Before jump
-                    if (exactOrderParameter < 0.05){
+                    if (exactOrderParameter < m_a){
                         //! Inter Event Time Distribution
                         // ++interEventTimeDistribution[0][time-updatedTime];
                         // ++sampledPeriod;

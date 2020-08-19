@@ -127,7 +127,7 @@ public:
     }
 
     //* Mean cluster size
-    double meanCluster(const int &t_time) const{
+    double meanCluster() const{
         const int first=m_size-m_maximumCluster;
         double second=0;
         for (auto it=m_sortedCluster.begin(); it!=m_sortedCluster.end(); ++it){
