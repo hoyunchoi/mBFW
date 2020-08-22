@@ -1,20 +1,21 @@
 #include "dataProcess.hpp"
 
-extern const int networkSize=1280000;
-extern const double g=0.5;
-extern const double binSize=0.1;
-extern const int precision=1e4;
-
 int main(){
-    std::vector<int> ensembleList(20,20000);
-    // std::vector<int> ensembleList={10};
-    // ensembleList[0]=400000;
+    const int networkSize=10000;
+    const double acceptanceThreshold = 0.5;
+    const double logBinDelta = 0.1; 
+    std::vector<int> ensembleList(1,2);
+
+    mBFW::process::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta);
+    // mBFW::process::f();
+
+
 
     // meanCore("meanClusterSize", ensembleList);
     // meanCore("orderParameter", ensembleList);
     // meanOrderParameterDistribution(ensembleList);
     // logBinClusterSizeDistribution(ensembleList,1);
-    logBinInterEventTimeDistribution(ensembleList);
+    // logBinInterEventTimeDistribution(ensembleList);
 
     // logBinDeltaMDistribution(ensembleList);
     // logBinK_DeltaAcceptance(ensembleList);

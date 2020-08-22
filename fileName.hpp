@@ -1,36 +1,15 @@
 # pragma once
-# include <iomanip>
-# include <string>
+#include "/pds/pds172/hoyun1009/library-Git/stringFormat.hpp"
 
-// Change to_string with precision for main folder name
-template <typename T>
-std::string to_stringWithPrecision(const T a_value, const int n = 6)
-{
-    std::ostringstream out;
-    out << std::fixed <<std::setprecision(n) << a_value;
-    return out.str();
+//* File names of observables
+std::string defaultFileName(){
+    return "N"+to_stringWithExponent((double)networkSize, 1)+"G"+to_stringWithPrecision(acceptanceThreshold,1)+"E"+to_stringWithExponent((double)ensembleSize)+"-"+std::to_string(coreNum)+".txt";
 }
 
-template <typename T>
-std::string to_stringWithExponent(const T &a_value, const int &n=1)
-{
-    std::ostringstream out;
-    out<<std::scientific<<std::setprecision(n) << a_value;
-    return out.str();
+std::string filename_time(const double& t_time){
+    return "N"+to_stringWithExponent((double)networkSize, 1)+"G"+to_stringWithPrecision(acceptanceThreshold,1)+"E"+to_stringWithExponent((double)ensembleSize)+"T"+to_stringWithPrecision(t_time,4)+"-"+std::to_string(coreNum)+".txt";
 }
 
-
-std::string fileName(const int &t_networkSize, const double &t_alpha, const double &t_gamma, const int &t_ensembleSize){
-    std::string fileName="N="+to_stringWithExponent((double)t_networkSize,1)+",a="+to_stringWithPrecision(t_alpha,1)+",r="+to_stringWithPrecision(t_gamma,1)+",e="+std::to_string(t_ensembleSize);
-    return fileName;
-}
-
-std::string fileName(const int &t_networkSize, const double &t_g, const int &t_ensembleSize){
-    std::string fileName="N="+to_stringWithExponent((double)t_networkSize,1)+",g="+to_stringWithPrecision(t_g,1)+",e="+std::to_string(t_ensembleSize);
-    return fileName;
-}
-
-std::string fileName(const int &t_networkSize, const double &t_g){
-    std::string fileName="N="+to_stringWithExponent((double)t_networkSize,1)+",g="+to_stringWithPrecision(t_g,1);
-    return fileName;
+std::string filename_orderParameter(const double& t_orderParameter){
+    return "N"+to_stringWithExponent((double)networkSize, 1)+"G"+to_stringWithPrecision(acceptanceThreshold,1)+"E"+to_stringWithExponent((double)ensembleSize)+"OP"+to_stringWithPrecision(t_orderParameter,4)+"-"+std::to_string(coreNum)+".txt";
 }

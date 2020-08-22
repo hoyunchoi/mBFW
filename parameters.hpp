@@ -1,6 +1,5 @@
 # pragma once
-# include <tuple>
-#include "/pds/pds172/hoyun1009/library/linearAlgebra.hpp"
+#include <tuple>
 
 std::vector<double> nearCritical(const int &t_size, const double &t_T_c, const double &t_observationInterval){
         std::vector<double> observationTime(5);
@@ -10,14 +9,15 @@ std::vector<double> nearCritical(const int &t_size, const double &t_T_c, const d
         return observationTime;
 }
 
-std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const int &t_networkSize, const double &t_g){
+std::tuple<std::vector<double>, std::vector<double>, double, double> getParameters(const int &t_networkSize, const double &t_g){
     std::vector<int> N={10000,20000,40000,80000,160000,320000,640000,1280000,2560000,5120000,10240000};
     std::map<int,std::vector<double>> timeOfOrderParameterDistribution;
     std::map<int, std::vector<double>> orderParameterOfClusterSizeDistribution;
-    double m_c;
+    double m_c, t_c;
 
     if (t_g==0.5){
         m_c=0.86;
+        t_c = 0.937;
 
         timeOfOrderParameterDistribution[10000]=std::vector<double>{0.9536,0.9537,0.9538,0.9539,0.954,0.9541,0.9542,0.9543,0.9544,0.9545};
         timeOfOrderParameterDistribution[20000]=std::vector<double>{0.9501,0.9502,0.9503,0.9504};
@@ -45,6 +45,7 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==0.2){
         m_c=0.989;
+        t_c = 0.995;
 
         timeOfOrderParameterDistribution[10000]=std::vector<double> {0.993,0.9935,0.994,0.9945,0.995,0.9955,0.996,0.9965,0.997,0.9975,0.998,0.9985,0.999,0.9995};
         timeOfOrderParameterDistribution[20000]=std::vector<double> {0.993,0.9935,0.994,0.9945,0.995,0.9955,0.996,0.9965,0.997,0.9975,0.998,0.9985,0.999,0.9995};
@@ -73,6 +74,7 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==0.3){
         m_c=0.96;
+        t_c = 0.983;
 
         timeOfOrderParameterDistribution[10000]=std::vector<double>{0.96,0.97,0.975,0.98,0.981,0.982,0.983,0.984,0.985,0.986,0.987,0.988,0.989,0.99,0.991,0.992,0.993,0.994,0.995};
         timeOfOrderParameterDistribution[20000]=std::vector<double>{0.96,0.97,0.975,0.98,0.981,0.982,0.983,0.984,0.985,0.986,0.987,0.988,0.989,0.99,0.991,0.992,0.993,0.994,0.995};
@@ -101,6 +103,7 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==0.4){
         m_c=0.91;
+        t_c = 0.964;
 
         for (auto &n:N){
             timeOfOrderParameterDistribution[n]=std::vector<double>{0.94,0.945,0.95,0.955,0.96,0.965,0.97,0.975,0.98};
@@ -110,7 +113,7 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==0.6){
         m_c=0.784;
-
+        t_c = 0.901;
         for (auto &n:N){
             timeOfOrderParameterDistribution[n]=std::vector<double>{0.88,0.885,0.89,0.895,0.9,0.905,0.91,0.915,0.92};
             orderParameterOfClusterSizeDistribution[n]=std::vector<double>{0.74,0.745,0.755,0.76,0.765,0.77,0.775,0.78,0.785,0.79,0.795,0.805,0.81};
@@ -119,6 +122,7 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==0.7){
         m_c=0.693;
+        t_c = 0.856;
 
         for (auto &n:N){
             timeOfOrderParameterDistribution[n]=std::vector<double>{0.835,0.84,0.845,0.85,0.855,0.86,0.865,0.87,0.875};
@@ -128,6 +132,7 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==0.9){
         m_c=0.415;
+        t_c = 0.718;
 
         for (auto &n:N){
             timeOfOrderParameterDistribution[n]=std::vector<double>{0.695,0.7,0.705,0.71,0.715,0.72,0.725,0.73,0.735};
@@ -137,11 +142,13 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
     }
     else if (t_g==1){
         m_c=0;
+        t_c = 0.5;
 
         orderParameterOfClusterSizeDistribution[1280000]=std::vector<double>{0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.2,0.3,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85};
     }
     else if (t_g==0.8){
         m_c=0.58;
+        t_c = 0.799;
 
         timeOfOrderParameterDistribution[10000]=std::vector<double>{0.85,0.855,0.86,0.865,0.87,0.875,0.88,0.885,0.89,0.895,0.90,0.905,0.91,0.915,0.92,0.925};
         timeOfOrderParameterDistribution[20000]=std::vector<double>{0.835,0.84,0.845,0.85,0.855,0.86,0.865,0.87,0.875,0.88,0.885,0.89,0.895,0.90,0.905,0.91};
@@ -171,5 +178,5 @@ std::tuple<std::vector<double>, std::vector<double>, double> getParameters(const
 
     }
 
-    return std::make_tuple(timeOfOrderParameterDistribution[t_networkSize], orderParameterOfClusterSizeDistribution[t_networkSize], m_c);
+    return std::make_tuple(timeOfOrderParameterDistribution[t_networkSize], orderParameterOfClusterSizeDistribution[t_networkSize], m_c, t_c);
 }
