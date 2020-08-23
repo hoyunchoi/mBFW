@@ -5,10 +5,10 @@
 #include <string>
 #include <map>
 
-#include "/pds/pds172/hoyun1009/library-Git/linearAlgebra.hpp"
-#include "/pds/pds172/hoyun1009/library-Git/Networks.hpp"
-#include "/pds/pds172/hoyun1009/library-Git/CSV.hpp"
-#include "/pds/pds172/hoyun1009/library-Git/stringFormat.hpp"
+#include "../library-Git/linearAlgebra.hpp"
+#include "../library-Git/Networks.hpp"
+#include "../library-Git/CSV.hpp"
+#include "../library-Git/stringFormat.hpp"
 
 #include "parameters.hpp"
 

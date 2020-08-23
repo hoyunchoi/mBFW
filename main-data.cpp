@@ -3,12 +3,11 @@
 int main(){
     const int networkSize=10000;
     const double acceptanceThreshold = 0.5;
-    const double logBinDelta = 0.1; 
+    const double logBinDelta = 0.1;
     std::vector<int> ensembleList(1,2);
 
     mBFW::process::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta);
     // mBFW::process::f();
-
 
 
     // meanCore("meanClusterSize", ensembleList);
