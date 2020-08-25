@@ -30,23 +30,23 @@ int main(int argc, char *argv[]){
 
     //* save parameters
     start = std::chrono::system_clock::now();
-    
-    mBFW::process::save_orderParameter();
-    mBFW::process::save_meanClusterSize();
-    mBFW::process::save_secondGiant();
-    mBFW::process::save_interEventTime();
-    mBFW::process::save_deltaAcceptance();
-    mBFW::process::save_orderParameterDistribution();
-    mBFW::process::save_clusterSizeDistribution();
-    mBFW::process::save_ageDistribution();
-    mBFW::process::save_interEventTimeDistribution();
-    mBFW::process::save_deltaUpperBoundDistribution();
-    mBFW::process::save_deltaAcceptanceDistribution();
-    mBFW::process::save_interEventTime_DeltaAcceptance();
-    mBFW::process::save_upperBound_DeltaAcceptance();
-    mBFW::process::save_deltaUpperBound_DeltaAcceptance();
-    mBFW::process::save_dynamics();
-    
+
+    mBFW::data::save_orderParameter();
+    mBFW::data::save_meanClusterSize();
+    mBFW::data::save_secondGiant();
+    mBFW::data::save_interEventTime();
+    mBFW::data::save_deltaAcceptance();
+    mBFW::data::save_orderParameterDistribution();
+    mBFW::data::save_clusterSizeDistribution();
+    mBFW::data::save_ageDistribution();
+    mBFW::data::save_interEventTimeDistribution();
+    mBFW::data::save_deltaUpperBoundDistribution();
+    mBFW::data::save_deltaAcceptanceDistribution();
+    mBFW::data::save_interEventTime_DeltaAcceptance();
+    mBFW::data::save_upperBound_DeltaAcceptance();
+    mBFW::data::save_deltaUpperBound_DeltaAcceptance();
+    mBFW::data::save_dynamics();
+
     sec=std::chrono::system_clock::now()-start;
     printf(" %0.6fs for saving\n", sec.count());
 

@@ -162,7 +162,7 @@ namespace mBFW{
             int periodTrialTime = 0;
             int peakTime = 0;
             int peakTrialTime = 0;
-            int updatedTime = 0; 
+            int updatedTime = 0;
             double maxAcceptance = 0;
             double maxPeriodAcceptance = 0;
             bool findNewNodes = true;
@@ -196,7 +196,7 @@ namespace mBFW{
                     ++trialTime;
                     ++periodTime;
                     ++periodTrialTime;
-                    findNewNodes=true;                    
+                    findNewNodes=true;
                     const double exactOrderParameter=model.getMaximumClusterSize()/(double)networkSize;
 
                     //* max acceptance
@@ -240,14 +240,14 @@ namespace mBFW{
                         const double currentDeltaAcceptance = maxAcceptance-acceptanceThreshold;
                         std::string currentState;
 
-                        //! Cluster Size Distribution 
+                        //! Cluster Size Distribution
                         const double roundedOrderParameter=round(exactOrderParameter*precision)/precision;
                         auto it = std::find(orderParameter_clusterSizeDistribution.begin(), orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
                         if (it != orderParameter_clusterSizeDistribution.end()){
                             auto sortedCluster = model.getSortedCluster();
                             for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
                                 clusterSizeDistribution[*it][it2->first] += it2->second;
-                            }    
+                            }
                         }
 
                         //* Before and During Jump
@@ -303,20 +303,20 @@ namespace mBFW{
                     ++trialTime;
                     ++periodTrialTime;
                     findNewNodes=true;
-                } 
-             
+                }
+
                 //! Dynamics only for small number of ensembles
                 if (ensembleSize < 5){
                     dynamics.emplace_back(std::vector<int>{time, trialTime, periodTime, periodTrialTime, model.getMaximumClusterSize(), upperBound});
                 }//* End of one step
-            
+
             }//* End of network growing (one ensemble)
         } //* End of every ensembles
     } //* End of function run
 
 
 
-    namespace process{
+    namespace data{
         //* Default directory for data of mBFW model
         const std::string directory = "/pds/pds172/hoyun1009/data/mBFW/";
         using namespace linearAlgebra;
@@ -426,7 +426,7 @@ namespace mBFW{
         void save_clusterSizeDistribution(){
             for (const auto& op : orderParameter_clusterSizeDistribution){
                 const std::string fullFileName = directory + "clusterSizeDistribution/" + filename_orderParameter(op);
-            
+
                 //* save only useful data
                 std::map<double, double> trimmed;
                 const double tot = std::accumulate(clusterSizeDistribution[op].begin(), clusterSizeDistribution[op].end(), 0.0);

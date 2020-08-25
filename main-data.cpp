@@ -6,7 +6,7 @@ int main(){
     const double logBinDelta = 0.1;
     std::vector<int> ensembleList(1,2);
 
-    mBFW::process::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta);
+    mBFW::data::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta);
     // mBFW::process::f();
 
 
