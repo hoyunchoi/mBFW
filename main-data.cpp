@@ -1,37 +1,33 @@
-#include "dataProcess.hpp"
+#include <chrono>
+
+#include "data.hpp"
 
 int main(){
     const int networkSize=10000;
     const double acceptanceThreshold = 0.5;
     const double logBinDelta = 0.1;
-    std::vector<int> ensembleList(1,2);
+    std::vector<int> ensembleList = {10,10};
 
+    auto start = std::chrono::system_clock::now();
     mBFW::data::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta);
-    // mBFW::process::f();
 
+    mBFW::data::average_orderParameter();
+    mBFW::data::average_meanClusterSize();
+    mBFW::data::average_secondGiant();
+    mBFW::data::average_interEventTime();
+    mBFW::data::average_deltaAcceptance();
+    mBFW::data::average_orderParameterDistribution();
+    mBFW::data::average_clusterSizeDistribution();
+    mBFW::data::average_ageDistribution();
+    mBFW::data::average_interEventTimeDistribution();
+    mBFW::data::average_deltaUpperBoundDistribution();
+    mBFW::data::average_deltaAcceptanceDistribution();
+    mBFW::data::average_interEventTime_DeltaAcceptance();
+    mBFW::data::average_upperBound_DeltaAcceptance();
+    mBFW::data::average_deltaUpperbound_DeltaAcceptance();
 
-    // meanCore("meanClusterSize", ensembleList);
-    // meanCore("orderParameter", ensembleList);
-    // meanOrderParameterDistribution(ensembleList);
-    // logBinClusterSizeDistribution(ensembleList,1);
-    // logBinInterEventTimeDistribution(ensembleList);
-
-    // logBinDeltaMDistribution(ensembleList);
-    // logBinK_DeltaAcceptance(ensembleList);
-    // logBinDeltaK_DeltaAcceptance(ensembleList);
-    // logBinTime_DeltaAcceptance(ensembleList);
-    // logBinAgeDistribution(ensembleList);
-    // meanPeriodAcceptance_UpperBoundRatio(ensembleList);
-    // meanPeriodAcceptance_DeltaK(ensembleList);
-    // meanPeriodAcceptanceAreaDistribution(ensembleList);
-    // meanAcceptanceDistribution(ensembleList);
-    // logBinInterEventTime(ensembleList);
-    // logBinInterEventTime_Acceptace(ensembleList);
-
-
-    // meanCore("secondGiant", ensembleList);
-    // logBinClusterSizeDistribution(ensembleList,2);
-    // meanOrderParameterAfter(ensembleList);
+    std::chrono::duration<double> sec = std::chrono::system_clock::now()-start;
+    printf("%.6f second to process data\n", sec.count());
 
     return 0;
 
