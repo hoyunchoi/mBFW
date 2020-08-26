@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <functional>
 
 #include "../library-Git/linearAlgebra.hpp"
 #include "../library-Git/Networks.hpp"
@@ -15,6 +16,7 @@
 #include "mBFW.hpp"
 
 namespace mBFW::generate{
+    //*--------------------------------------------Declaration of variables---------------------------------------------------------
     //! Declaration of variables only used at mBFW::generate namespace
     int randomEngineSeed;
     double precision;
@@ -25,10 +27,25 @@ namespace mBFW::generate{
     std::vector<double> minBin;
     std::vector<double> valueBin;
 
-    // std::vector<double> minDeltaAcceptance;
-    // std::vector<double> maxDeltaAcceptance;
-    // std::vector<double> logBinnedDeltaAcceptance;
-    // int deltaAcceptanceBinNum;
+    //! Random Engine
+    pcg32 randomEngine;
+    std::uniform_int_distribution<int> nodeDistribution;
+
+    //! calculation functions
+    std::function<void(const int&, const double&)> do_orderParameter;
+    std::function<void(const int&, const double&)> do_meanClusterSize;
+    std::function<void(const int&, const double&)> do_secondGiant;
+    std::function<void(const std::string&, const int&, const int&)> do_interEventTime;
+    std::function<void(const std::string&, const int&, const double&)> do_deltaAcceptance;
+    std::function<void(const int&, const int&)> do_orderParameterDistribution;
+    std::function<void(const double&, const NZ_Network&)> do_clusterSizeDistribution;
+    std::function<void(const double&, const NZ_Network&)> do_ageDistribution;
+    std::function<void(const std::string&, const int&)> do_interEventTimeDistribution;
+    std::function<void(const std::string&, const int&)> do_deltaUpperBoundDistribution;
+    std::function<void(const std::string&, const double&)> do_deltaAcceptanceDistribution;
+    std::function<void(const int&, const double&)> do_interEventTime_DeltaAcceptance;
+    std::function<void(const int&, const double&)> do_upperBound_DeltaAcceptance;
+    std::function<void(const int&, const double&)> do_deltaUpperBound_DeltaAcceptance;
 
     //! Declaration of observables
     //* X[time] = value of observable X at time
@@ -76,10 +93,78 @@ namespace mBFW::generate{
     //* Dynamics
     std::vector<std::vector<int>> dynamics;
 
-    //! Random Engine
-    pcg32 randomEngine;
-    std::uniform_int_distribution<int> nodeDistribution;
+    //*-------------------------------------------Definition of calculating observables------------------------------------------------------
+    void calculate_orderParameter(const int& t_time, const double& t_exactOrderParameter){
+        orderParameter[t_time] += t_exactOrderParameter;
+    }
+    void calculate_meanClusterSize(const int& t_time, const double& t_meanClusterSize){
+        meanClusterSize[t_time] += t_meanClusterSize;
+    }
+    void calculate_secondGiant(const int& t_time, const double& t_secondMaximumCluster){
+        secondGiant[t_time] += t_secondMaximumCluster;
+    }
+    void calculate_interEventTime(const std::string& t_currentState, const int& t_time, const int& t_currentInterEventTime){
+        interEventTime[t_currentState][t_time] += t_currentInterEventTime;
+        ++sampledInterEventTime[t_currentState][t_time];
+    }
+    void calculate_deltaAcceptance(const std::string& t_currentState, const int& t_time, const double& t_currentDeltaAcceptance){
+        deltaAcceptance[t_currentState][t_time] += t_currentDeltaAcceptance;
+        ++sampledDeltaAcceptance[t_currentState][t_time];
+    }
+    void calculate_orderParameterDistribution(const int& t_time, const int& t_maximumClusterSize){
+        const double roundedTime = round(t_time/degenerated)/precision;
+        auto it = std::find(time_orderParameterDistribution.begin(), time_orderParameterDistribution.end(), roundedTime);
+        if (it != time_orderParameterDistribution.end()){
+            ++orderParameterDistribution[*it][t_maximumClusterSize];
+        }
+    }
+    void calculate_clusterSizeDistribution(const double& t_exactOrderParameter, const NZ_Network& t_model){
+        const double roundedOrderParameter = round(t_exactOrderParameter*precision)/precision;
+        auto it = std::find(orderParameter_clusterSizeDistribution.begin(), orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
+        if (it != orderParameter_clusterSizeDistribution.end()){
+            const std::map<int,int> sortedCluster = t_model.getSortedCluster();
+            for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
+                clusterSizeDistribution[*it][it2->first] += it2->second;
+            }
+        }
+    }
+    void calculate_ageDistribution(const double& t_exactOrderParameter, const NZ_Network& t_model){
+        if (t_exactOrderParameter < m_c){
+            const std::vector<std::pair<int,int>> changedAge = t_model.getChangedAge();
+            std::string currentState;
+            t_exactOrderParameter < m_a ? currentState = "before" : currentState = "during";
+            for (const auto& age : changedAge){
+                ageDistribution[currentState][age.first] += age.second;
+            }
+        }
+    }
+    void calculate_interEventTimeDistribution(const std::string& t_currentState, const int& t_currentInterEventTime){
+        ++interEventTimeDistribution[t_currentState][t_currentInterEventTime];
+    }
+    void calculate_deltaUpperBoundDistribution(const std::string& t_currentState, const int& t_deltaMaximumClusterSize){
+        ++deltaUpperBoundDistribution[t_currentState][t_deltaMaximumClusterSize];
+    }
+    void calculate_deltaAcceptanceDistribution(const std::string& t_currentState, const double& t_currentDeltaAcceptance){
+        for (int i=0; i<logBinNum; ++i){
+            if (minBin[i+1] > t_currentDeltaAcceptance){
+                ++deltaAcceptanceDistribution[t_currentState][i];
+                break;
+            }
+        }
+    }
+    void calculate_interEventTime_DeltaAcceptance(const int& t_currentInterEventTime, const double& t_currentDeltaAcceptance){
+        interEventTime_DeltaAcceptance[t_currentInterEventTime] += t_currentDeltaAcceptance;
+        ++sampledInterEventTime_DeltaAcceptance[t_currentInterEventTime];
+    }
+    void calculate_upperBound_DeltaAcceptance(const int& t_upperBound, const double& t_currentDeltaAcceptance){
+        upperBound_DeltaAcceptance[t_upperBound] += t_currentDeltaAcceptance;
+        ++sampledUpperBound_DeltaAcceptance[t_upperBound];}
+    void calculate_deltaUpperBound_DeltaAcceptance(const int& t_deltaMaximumClusterSize, const double& t_currentDeltaAcceptance){
+        deltaUpperBound_DeltaAcceptance[t_deltaMaximumClusterSize] += t_currentDeltaAcceptance;
+        ++sampledDeltaUpperBound_DeltaAcceptance[t_deltaMaximumClusterSize];
+    }
 
+    //*-------------------------------------------Set Parameters for one run------------------------------------------------------
     void setParameters(const int& t_networkSize, const int& t_ensembleSize, const double& t_acceptanceThreshold, const double t_precision, const int& t_coreNum, const int& t_randomEngineSeed, const std::vector<bool> t_observables){
         //! Observables to be processed
         process_orderParameter = t_observables[0];
@@ -106,13 +191,30 @@ namespace mBFW::generate{
         randomEngineSeed = t_randomEngineSeed;
         t_networkSize < t_precision ? precision = t_networkSize : precision = t_precision;
 
-        //! Pre-defined variables
-        std::tie(time_orderParameterDistribution, orderParameter_clusterSizeDistribution, m_c, t_c) = getParameters(networkSize, acceptanceThreshold);
-        degenerated=t_networkSize/t_precision;
-
         //! Random Engine
         randomEngineSeed == -1 ? randomEngine.seed((std::random_device())()) : randomEngine.seed(randomEngineSeed);
         nodeDistribution.param(std::uniform_int_distribution<int>::param_type(0, networkSize-1));
+
+        //! calculation function
+        process_orderParameter ? do_orderParameter = calculate_orderParameter : do_orderParameter = [](const int&, const double&){};
+        process_meanClusterSize ? do_meanClusterSize = calculate_meanClusterSize : do_meanClusterSize = [](const int&, const double&){};
+        process_secondGiant ? do_secondGiant = calculate_secondGiant : do_secondGiant = [](const int&, const double&){};
+        process_interEventTime ? do_interEventTime = calculate_interEventTime : do_interEventTime = [](const std::string&, const int&, const int&){};
+        process_deltaAcceptance ? do_deltaAcceptance = calculate_deltaAcceptance : do_deltaAcceptance = [](const std::string&, const int&, const double&){};
+        process_orderParameterDistribution ? do_orderParameterDistribution = calculate_orderParameterDistribution : do_orderParameterDistribution = [](const int&, const int&){};
+        process_clusterSizeDistribution ? do_clusterSizeDistribution = calculate_clusterSizeDistribution : do_clusterSizeDistribution = [](const double&, const NZ_Network&){};
+        process_ageDistribution ? do_ageDistribution = calculate_ageDistribution : do_ageDistribution = [](const double&, const NZ_Network&){};
+        process_interEventTimeDistribution ? do_interEventTimeDistribution = calculate_interEventTimeDistribution : do_interEventTimeDistribution = [](const std::string&, const int&){};
+        process_deltaUpperBoundDistribution ? do_deltaUpperBoundDistribution = calculate_deltaUpperBoundDistribution : do_deltaUpperBoundDistribution = [](const std::string&, const int&){};
+        process_deltaAcceptanceDistribution ? do_deltaAcceptanceDistribution = calculate_deltaAcceptanceDistribution : do_deltaAcceptanceDistribution = [](const std::string&, const double&){};
+        process_interEventTime_DeltaAcceptance ? do_interEventTime_DeltaAcceptance = calculate_interEventTime_DeltaAcceptance : do_interEventTime_DeltaAcceptance = [](const int&, const double&){};
+        process_upperBound_DeltaAcceptance ? do_upperBound_DeltaAcceptance = calculate_upperBound_DeltaAcceptance : do_upperBound_DeltaAcceptance = [](const int&, const double&){};
+        process_deltaUpperBound_DeltaAcceptance ? do_deltaUpperBound_DeltaAcceptance = calculate_deltaUpperBound_DeltaAcceptance : do_deltaUpperBound_DeltaAcceptance = [](const int&, const double&){};
+
+
+        //! Pre-defined variables
+        std::tie(time_orderParameterDistribution, orderParameter_clusterSizeDistribution, m_c, t_c) = getParameters(networkSize, acceptanceThreshold);
+        degenerated=t_networkSize/t_precision;
 
         //! Output variables (Observables)
         //* time-X
@@ -174,6 +276,7 @@ namespace mBFW::generate{
         if (process_dynamics){dynamics.reserve(3*networkSize*ensembleSize);}
     } //* End of function mBFW::generate::setParameters
 
+    //*-------------------------------------------Run m-BFW model ------------------------------------------------------
     void run(){
         for (int ensemble=0; ensemble<ensembleSize; ++ensemble){
             //* Default values for one ensemble
@@ -227,7 +330,8 @@ namespace mBFW::generate{
                     ++periodTime;
                     ++periodTrialTime;
                     findNewNodes=true;
-                    const double exactOrderParameter=model.getMaximumClusterSize()/(double)networkSize;
+                    const int maximumClusterSize = model.getMaximumClusterSize();
+                    const double exactOrderParameter = maximumClusterSize/(double)networkSize;
 
                     //* max acceptance
                     if ((double)time/trialTime > maxAcceptance){
@@ -236,44 +340,38 @@ namespace mBFW::generate{
                         maxAcceptance = (double)time/trialTime;
                     }
 
-                    //! order parameter
-                    if (process_orderParameter){
-                    orderParameter[time] += exactOrderParameter;
+                    //! Order Parameter
+                    do_orderParameter(time, exactOrderParameter);
+                    // orderParameter[time] += exactOrderParameter;
 
-                    }
+                    //! Mean cluster Size
+                    do_meanClusterSize(time, model.getMeanClusterSize());
+                    // meanClusterSize[time] += model.getMeanClusterSize();
 
-                    //! mean cluster size
-                    if (process_meanClusterSize){
-                        meanClusterSize[time] += model.getMeanClusterSize();
-                    }
-
-                    //! second giant
-                    if (process_secondGiant){
-                        secondGiant[time] += model.getSecondMaximumClusterSize()/(double)networkSize;
-                    }
+                    //! Second Giant
+                    do_secondGiant(time, model.getSecondMaximumClusterSize()/(double)networkSize);
+                    // secondGiant[time] += model.getSecondMaximumClusterSize()/(double)networkSize;
 
                     //! Age Distribution
-                    if (process_ageDistribution){
-                        if (exactOrderParameter < m_a){
-                            for (auto& changedAge : model.getChangedAge()){
-                                ageDistribution["before"][changedAge.first] += changedAge.second;
-                            }
-                        }
-                        else if (exactOrderParameter < m_c){
-                            for (auto& changedAge : model.getChangedAge()){
-                                ageDistribution["during"][changedAge.first] += changedAge.second;
-                            }
-                        }
-                    }
+                    do_ageDistribution(exactOrderParameter, model);
+                    // if (exactOrderParameter < m_a){
+                    //     for (auto& changedAge : model.getChangedAge()){
+                    //         ageDistribution["before"][changedAge.first] += changedAge.second;
+                    //     }
+                    // }
+                    // else if (exactOrderParameter < m_c){
+                    //     for (auto& changedAge : model.getChangedAge()){
+                    //         ageDistribution["during"][changedAge.first] += changedAge.second;
+                    //     }
+                    // }
 
-                    //! order parameter distribution
-                    if (process_orderParameterDistribution){
-                        const double roundedTime=round(time/degenerated)/precision;
-                        auto it = std::find(time_orderParameterDistribution.begin(),    time_orderParameterDistribution.end(), roundedTime);
-                        if (it != time_orderParameterDistribution.end()){
-                            ++orderParameterDistribution[*it][model.getMaximumClusterSize()];
-                        }
-                    }
+                    //! Order Parameter Distribution
+                    do_orderParameterDistribution(time, maximumClusterSize);
+                    // const double roundedTime=round(time/degenerated)/precision;
+                    // auto it = std::find(time_orderParameterDistribution.begin(),    time_orderParameterDistribution.end(), roundedTime);
+                    // if (it != time_orderParameterDistribution.end()){
+                    //     ++orderParameterDistribution[*it][model.getMaximumClusterSize()];
+                    // }
 
                     //* End of k-period
                     if (model.getDeltaMaximumClusterSize() && model.getMaximumClusterSize()>2){
@@ -282,67 +380,59 @@ namespace mBFW::generate{
                         std::string currentState;
 
                         //! Cluster Size Distribution
-                        if (process_clusterSizeDistribution){
-                            const double roundedOrderParameter=round(exactOrderParameter*precision)/precision;
-                            auto it = std::find(orderParameter_clusterSizeDistribution.begin(),     orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
-                            if (it != orderParameter_clusterSizeDistribution.end()){
-                                auto sortedCluster = model.getSortedCluster();
-                                for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
-                                    clusterSizeDistribution[*it][it2->first] += it2->second;
-                                }
-                            }
-                        }
+                        do_clusterSizeDistribution(exactOrderParameter, model);
+                        // const double roundedOrderParameter=round(exactOrderParameter*precision)/precision;
+                        // auto it = std::find(orderParameter_clusterSizeDistribution.begin(),     orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
+                        // if (it != orderParameter_clusterSizeDistribution.end()){
+                        //     auto sortedCluster = model.getSortedCluster();
+                        //     for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
+                        //         clusterSizeDistribution[*it][it2->first] += it2->second;
+                        //     }
+                        // }
 
                         //* Before and During Jump
                         if (exactOrderParameter < m_c){
+                            const int deltaMaximumClusterSize = model.getDeltaMaximumClusterSize();
                             exactOrderParameter < m_a ? currentState = "before" : currentState = "during";
 
                             //! Inter Event Time Distribution
-                            if (process_interEventTimeDistribution){
-                                ++interEventTimeDistribution[currentState][currentInterEventTime];
-                            }
+                            do_interEventTimeDistribution(currentState, currentInterEventTime);
+                            // ++interEventTimeDistribution[currentState][currentInterEventTime];
 
                             //! Inter Event Time
-                            if (process_interEventTime){
-                                interEventTime[currentState][time] += currentInterEventTime;
-                                ++sampledInterEventTime[currentState][time];
-                            }
+                            do_interEventTime(currentState, time, currentInterEventTime);
+                            // interEventTime[currentState][time] += currentInterEventTime;
+                            // ++sampledInterEventTime[currentState][time];
 
                             //! Delta Acceptance
-                            if (process_deltaAcceptance){
-                                deltaAcceptance[currentState][time] += currentDeltaAcceptance;
-                                ++sampledDeltaAcceptance[currentState][time];
-                            }
+                            do_deltaAcceptance(currentState, time, currentDeltaAcceptance);
+                            // deltaAcceptance[currentState][time] += currentDeltaAcceptance;
+                            // ++sampledDeltaAcceptance[currentState][time];
 
                             //! Delta Upper Bound Distribution
-                            if (process_deltaUpperBoundDistribution){
-                                ++deltaUpperBoundDistribution[currentState][model.getDeltaMaximumClusterSize()];
-                            }
+                            do_deltaUpperBoundDistribution(currentState, deltaMaximumClusterSize);
+                            // ++deltaUpperBoundDistribution[currentState][model.getDeltaMaximumClusterSize()];
 
                             //! Delta Acceptance Distribution
-                            if (process_deltaAcceptanceDistribution){
-                                for (int i=0; i<logBinNum; ++i){
-                                    if (minBin[i+1] > currentDeltaAcceptance){
-                                        ++deltaAcceptanceDistribution[currentState][i];
-                                        break;
-                                    }
-                                }
-                            }
+                            do_deltaAcceptanceDistribution(currentState, currentDeltaAcceptance);
+                            // for (int i=0; i<logBinNum; ++i){
+                            //     if (minBin[i+1] > currentDeltaAcceptance){
+                            //         ++deltaAcceptanceDistribution[currentState][i];
+                            //         break;
+                            //     }
+                            // }
 
                             //! X vs Delta Acceptance
-                            if (currentState == "before"){
-                                if (process_interEventTime_DeltaAcceptance){
-                                    interEventTime_DeltaAcceptance[currentInterEventTime] += currentDeltaAcceptance;
-                                    ++sampledInterEventTime_DeltaAcceptance[currentInterEventTime];
-                                }
-                                if (process_upperBound_DeltaAcceptance){
-                                    upperBound_DeltaAcceptance[upperBound] += currentDeltaAcceptance;
-                                    ++sampledUpperBound_DeltaAcceptance[upperBound];
-                                }
-                                if (process_deltaUpperBound_DeltaAcceptance){
-                                    deltaUpperBound_DeltaAcceptance[model.getDeltaMaximumClusterSize()] += currentDeltaAcceptance;
-                                    ++sampledDeltaUpperBound_DeltaAcceptance[model.getDeltaMaximumClusterSize()];
-                                }
+                            if (exactOrderParameter < m_a){
+                                do_interEventTime_DeltaAcceptance(currentInterEventTime, currentDeltaAcceptance);
+                                // interEventTime_DeltaAcceptance[currentInterEventTime] += currentDeltaAcceptance;
+                                // ++sampledInterEventTime_DeltaAcceptance[currentInterEventTime];
+                                do_upperBound_DeltaAcceptance(upperBound, currentDeltaAcceptance);
+                                // upperBound_DeltaAcceptance[upperBound] += currentDeltaAcceptance;
+                                // ++sampledUpperBound_DeltaAcceptance[upperBound];
+                                do_deltaUpperBound_DeltaAcceptance(deltaMaximumClusterSize, currentDeltaAcceptance);
+                                // deltaUpperBound_DeltaAcceptance[model.getDeltaMaximumClusterSize()] += currentDeltaAcceptance;
+                                // ++sampledDeltaUpperBound_DeltaAcceptance[model.getDeltaMaximumClusterSize()];
                             }
                         }
 
@@ -372,7 +462,7 @@ namespace mBFW::generate{
         } //* End of every ensembles
     } //* End of function mBFW::generate::run
 
-
+    //*-------------------------------------------Save calculated variables------------------------------------------------------
     void save(){
         using namespace linearAlgebra;
 
