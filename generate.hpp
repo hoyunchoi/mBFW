@@ -93,7 +93,7 @@ namespace mBFW::generate{
     //* Dynamics
     std::vector<std::vector<int>> dynamics;
 
-    //*-------------------------------------------Definition of calculating observables------------------------------------------------------
+    //*------------------------------------------- functions for calculating observables ------------------------------------------------------
     void calculate_orderParameter(const int& t_time, const double& t_exactOrderParameter){
         orderParameter[t_time] += t_exactOrderParameter;
     }
@@ -276,7 +276,7 @@ namespace mBFW::generate{
         if (process_dynamics){dynamics.reserve(3*networkSize*ensembleSize);}
     } //* End of function mBFW::generate::setParameters
 
-    //*-------------------------------------------Run m-BFW model ------------------------------------------------------
+    //*-------------------------------------------Run mBFW model ------------------------------------------------------
     void run(){
         for (int ensemble=0; ensemble<ensembleSize; ++ensemble){
             //* Default values for one ensemble

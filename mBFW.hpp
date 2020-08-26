@@ -69,12 +69,12 @@ namespace mBFW{
         return t_coreNum==-1 ? filename + ".txt" : filename + "-"+std::to_string(t_coreNum)+".txt";
     }
 
-    const std::string generalFileName(const std::string& t_observable, const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const double& t_check, const int& t_coreNum=-1){
+    const std::string generalFileName(const std::string& t_observable, const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const double& t_checkPoint, const int& t_coreNum=-1){
         if (t_observable == "orderParameterDistribution"){
-            return filename_time(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_check, t_coreNum);
+            return filename_time(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_checkPoint, t_coreNum);
         }
         else if (t_observable == "clusterSizeDistribution"){
-            return filename_orderParameter(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_check, t_coreNum);
+            return filename_orderParameter(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_checkPoint, t_coreNum);
         }
         else{
             return defaultFileName(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_coreNum);

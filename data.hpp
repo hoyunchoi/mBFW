@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iomanip>
 #include <algorithm>
+#include <cstdio>
 
 #include "../library-Git/CSV.hpp"
 #include "../library-Git/linearAlgebra.hpp"
@@ -15,18 +16,18 @@
 namespace mBFW::data{
     using namespace linearAlgebra;
 
-    //! Declaration of variables only use at mBFW::data namespace
+    //*------------------------------------------- Declaration of varaibles used at mBFW::data ------------------------------------------------------
     std::vector<int> ensembleList;
     int fileNum;
     int totalEnsemble;
+    bool deleteFile;
     int logBinNum;
     std::vector<double> double_min, double_value;
     std::vector<double> int_min, int_value;
 
+    //*------------------------------------------- Set parameters for average, merge, log bin ------------------------------------------------------
     //* Set parameters for core average
-    void setParameters(const int& t_networkSize, const double& t_acceptanceThreshold, const std::vector<int>& t_ensembleList, const double& t_logBinDelta, const std::vector<bool> t_observables){
-        using namespace linearAlgebra;
-
+    void setParameters(const int& t_networkSize, const double& t_acceptanceThreshold, const std::vector<int>& t_ensembleList, const double& t_logBinDelta, const std::vector<bool> t_observables, const bool t_deleteFile){
         //! Observables to be processed
         process_orderParameter = t_observables[0];
         process_meanClusterSize = t_observables[1];
@@ -48,6 +49,7 @@ namespace mBFW::data{
         networkSize = t_networkSize;
         acceptanceThreshold = t_acceptanceThreshold;
         ensembleList = t_ensembleList;
+        deleteFile = t_deleteFile;
         fileNum = t_ensembleList.size();
         totalEnsemble = std::accumulate(t_ensembleList.begin(), t_ensembleList.end(), 0);
 
@@ -68,6 +70,7 @@ namespace mBFW::data{
         std::tie(m_c, t_c, time_orderParameterDistribution, orderParameter_clusterSizeDistribution) = mBFW::parameters::pre_defined(networkSize, acceptanceThreshold);
     }
 
+    //*------------------------------------------- functions for data process ------------------------------------------------------
     //! average process
     //* t_c : only for type check
     template<typename T>
@@ -79,6 +82,7 @@ namespace mBFW::data{
             readCSV(readFile, temp);
             average += temp;
             sampleNum(sampledAverage, temp);
+            if (deleteFile){std::remove(readFile.c_str());}
         }
         average /= sampledAverage;
         return average;
@@ -88,12 +92,13 @@ namespace mBFW::data{
     //* for check point distribution, t_checkpoint
     //* t_check : only for type
     template <typename T>
-    const std::map<T, double> averageDistribution(const std::string& t_observable, const std::string& t_directory, const T& t_check, const double& t_checkpoint=0.0){
+    const std::map<T, double> averageDistribution(const std::string& t_observable, const std::string& t_directory, const T& t_check, const double& t_checkpoint){
         std::map<T, double> average, temp;
         for (int core=0; core<fileNum; ++core){
             const std::string readFile = t_directory + generalFileName(t_observable, networkSize, acceptanceThreshold, ensembleList[core], t_checkpoint, core);
             readCSV(readFile, temp);
             average += temp;
+            if (deleteFile){std::remove(readFile.c_str());}
         }
         average /= fileNum;
         return average;
@@ -140,6 +145,7 @@ namespace mBFW::data{
             const std::string readFile = directory + defaultFileName(networkSize, acceptanceThreshold, ensembleList[core], core);
             readCSV(readFile, temp);
             average += temp;
+            if (deleteFile){std::remove(readFile.c_str());}
         }
         average /= fileNum;
         const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
@@ -216,7 +222,7 @@ namespace mBFW::data{
             const std::string directory = rootDirectory + t_observable + "/" + state + "/";
 
             //* average
-            const std::map<T, double> avg = averageDistribution(t_observable, directory, t_check);
+            const std::map<T, double> avg = averageDistribution(t_observable, directory, t_check, 0.0);
             const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
             writeCSV(writeFile1, avg);
 
@@ -245,10 +251,8 @@ namespace mBFW::data{
 
     }
 
-    //* Average selected observables
-    void average(){
-        using namespace linearAlgebra;
-
+    //*------------------------------------------- process the data ------------------------------------------------------
+    void run(){
         //! Order Parameter
         if (process_orderParameter){time_X("orderParameter");}
 

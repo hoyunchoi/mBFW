@@ -5,6 +5,7 @@
 int main(){
     const int networkSize=10000;
     const double acceptanceThreshold = 0.5;
+    const bool deleteFile = true;
     const double logBinDelta = 0.1;
     std::vector<int> ensembleList(5,1000);
 
@@ -27,8 +28,8 @@ int main(){
     observables[14] = false;    //! Dynamics
 
     auto start = std::chrono::system_clock::now();
-    mBFW::data::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta, observables);
-    mBFW::data::average();
+    mBFW::data::setParameters(networkSize, acceptanceThreshold, ensembleList, logBinDelta, observables, deleteFile);
+    mBFW::data::run();
     std::chrono::duration<double> sec = std::chrono::system_clock::now()-start;
     printf("%.6f second to process data\n", sec.count());
 
