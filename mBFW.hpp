@@ -17,7 +17,24 @@ namespace mBFW{
     static std::vector<double> time_orderParameterDistribution;
     static std::vector<double> orderParameter_clusterSizeDistribution;
     static const std::vector<std::string> states = {"before", "during"};
-    const std::string directory = "../data/mBFW/";
+    const std::string rootDirectory = "../data/mBFW/";
+
+    //! Choose observables to be processed
+    static bool process_orderParameter;
+    static bool process_meanClusterSize;
+    static bool process_secondGiant;
+    static bool process_interEventTime;
+    static bool process_deltaAcceptance;
+    static bool process_orderParameterDistribution;
+    static bool process_clusterSizeDistribution;
+    static bool process_ageDistribution;
+    static bool process_interEventTimeDistribution;
+    static bool process_deltaUpperBoundDistribution;
+    static bool process_deltaAcceptanceDistribution;
+    static bool process_interEventTime_DeltaAcceptance;
+    static bool process_upperBound_DeltaAcceptance;
+    static bool process_deltaUpperBound_DeltaAcceptance;
+    static bool process_dynamics;
 
     //! File name conventions
     const std::string defaultFileName(const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const int& t_coreNum=-1, const int& t_randomEngineSeed=-1){
@@ -49,5 +66,17 @@ namespace mBFW{
         const std::string filename = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize) + ",OP"+to_stringWithPrecision(t_orderParameter,4);
 
         return t_coreNum==-1 ? filename + ".txt" : filename + "-"+std::to_string(t_coreNum)+".txt";
+    }
+
+    const std::string generalFileName(const std::string& t_observable, const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const double& t_check, const int& t_coreNum=-1){
+        if (t_observable == "orderParameterDistribution"){
+            return filename_time(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_check, t_coreNum);
+        }
+        else if (t_observable == "clusterSizeDistribution"){
+            return filename_orderParameter(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_check, t_coreNum);
+        }
+        else{
+            return defaultFileName(t_networkSize, t_acceptanceThreshold, t_ensembleSize, t_coreNum);
+        }
     }
 } //* End of namespace mBFW

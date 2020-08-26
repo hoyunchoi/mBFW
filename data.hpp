@@ -19,616 +19,276 @@ namespace mBFW::data{
     std::vector<int> ensembleList;
     int fileNum;
     int totalEnsemble;
-    double logBinDelta;
     int logBinNum;
-    std::vector<double> exponent;
-    std::vector<double> logBinMin, logBinMax, logBinned;
-    std::vector<double> LogBinMin, LogBinMax, LogBinned;
+    std::vector<double> double_min, double_value;
+    std::vector<double> int_min, int_value;
 
     //* Set parameters for core average
-    void setParameters(const int& t_networkSize, const double& t_acceptanceThreshold, const std::vector<int>& t_ensembleList, const double& t_logBinDelta){
+    void setParameters(const int& t_networkSize, const double& t_acceptanceThreshold, const std::vector<int>& t_ensembleList, const double& t_logBinDelta, const std::vector<bool> t_observables){
+        using namespace linearAlgebra;
+
+        //! Observables to be processed
+        process_orderParameter = t_observables[0];
+        process_meanClusterSize = t_observables[1];
+        process_secondGiant = t_observables[2];
+        process_interEventTime = t_observables[3];
+        process_deltaAcceptance = t_observables[4];
+        process_orderParameterDistribution = t_observables[5];
+        process_clusterSizeDistribution = t_observables[6];
+        process_ageDistribution = t_observables[7];
+        process_interEventTimeDistribution = t_observables[8];
+        process_deltaUpperBoundDistribution = t_observables[9];
+        process_deltaAcceptanceDistribution = t_observables[10];
+        process_interEventTime_DeltaAcceptance = t_observables[11];
+        process_upperBound_DeltaAcceptance = t_observables[12];
+        process_deltaUpperBound_DeltaAcceptance = t_observables[13];
+        process_dynamics = t_observables[14];
+
+        //! Input variables
         networkSize = t_networkSize;
         acceptanceThreshold = t_acceptanceThreshold;
         ensembleList = t_ensembleList;
         fileNum = t_ensembleList.size();
         totalEnsemble = std::accumulate(t_ensembleList.begin(), t_ensembleList.end(), 0);
-        logBinDelta = t_logBinDelta;
-        exponent = linearAlgebra::arange(-8, 0, t_logBinDelta);
+
+        //! Log Binning
+        const std::vector<double> exponent = arange(-8.0, 0.0, t_logBinDelta);
         logBinNum = exponent.size()-1;
-        logBinMin.resize(logBinNum);
-        logBinMax.resize(logBinNum);
-        logBinned.resize(logBinNum);
+        double_value.resize(logBinNum);
+        int_value.resize(logBinNum);
+
+        double_min = elementPow(10.0, exponent);
+        int_min = double_min * 1e8;
         for (int i=0; i<logBinNum; ++i){
-            logBinMin[i] = pow(10, exponent[i]);
-            logBinMax[i] = pow(10, exponent[i+1]);
-            logBinned[i] = sqrt(logBinMin[i] * logBinMax[i]);
+            double_value[i] = sqrt(double_min[i] * double_min[i+1]);
+            int_value[i] = sqrt(int_min[i] * int_min[i+1]);
         }
-        LogBinMin = logBinMin * 1e8;
-        LogBinMax = logBinMax * 1e8;
-        LogBinned = logBinned * 1e8;
+
+        //! pre-defined parameters from "parameter.hpp"
         std::tie(time_orderParameterDistribution, orderParameter_clusterSizeDistribution, m_c, t_c) = getParameters(networkSize, acceptanceThreshold);
     }
 
-    //! Order Parameter
-    void average_orderParameter(){
-        std::vector<double> average(networkSize);
-        std::vector<double> temp(networkSize);
+    //! average process
+    //* t_c : only for type check
+    template<typename T>
+    const std::map<T, double> average(const std::string t_directory, const T& t_check){
+        std::map<T, double> average, temp;
+        std::map<T, int> sampledAverage;
         for (int core=0; core<fileNum; ++core){
-            coreNum = core;
-            ensembleSize = ensembleList[core];
-            const std::string readFile = directory + "orderParameter/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
+            const std::string readFile = t_directory + defaultFileName(networkSize, acceptanceThreshold, ensembleList[core], core);
+            readCSV(readFile, temp);
+            average += temp;
+            sampleNum(sampledAverage, temp);
+        }
+        average /= sampledAverage;
+        return average;
+    }
+
+    //! average process of distribution
+    //* for check point distribution, t_checkpoint
+    //* t_check : only for type
+    template <typename T>
+    const std::map<T, double> averageDistribution(const std::string& t_observable, const std::string& t_directory, const T& t_check, const double& t_checkpoint=0.0){
+        std::map<T, double> average, temp;
+        for (int core=0; core<fileNum; ++core){
+            const std::string readFile = t_directory + generalFileName(t_observable, networkSize, acceptanceThreshold, ensembleList[core], t_checkpoint, core);
             readCSV(readFile, temp);
             average += temp;
         }
         average /= fileNum;
-        ensembleSize = totalEnsemble;
-        coreNum = 0;
-        const std::string writeFile1 = directory + "orderParameter/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-        const std::string writeFile2 = directory + "orderParameter/average/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile1, average);
-        writeCSV(writeFile2, average);
+        return average;
     }
 
-    //! Mean Cluster Size
-    void average_meanClusterSize(){
-        std::vector<double> average(networkSize);
-        std::vector<double> temp(networkSize);
-        for (int core=0; core<fileNum; ++core){
-            coreNum = core;
-            ensembleSize = ensembleList[core];
-            const std::string readFile = directory + "meanClusterSize/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            readCSV(readFile, temp);
-            average += temp;
+    //! Log Binning
+    template <typename T>
+    const std::map<double, double> logBin(const std::map<T,double>& t_raw){
+        //* Test whether T is double or int
+        T test = 2;
+        std::vector<double> min, value;
+        if (3/test == 1.5){
+            min = double_min;
+            value = double_value;
         }
-        average /= fileNum;
-        ensembleSize = totalEnsemble;
-        coreNum = 0;
-        const std::string writeFile1 = directory + "meanClusterSize/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-        const std::string writeFile2 = directory + "meanClusterSize/average/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile1, average);
-        writeCSV(writeFile2, average);
-    }
-
-    //! Second Giant
-    void average_secondGiant(){
-        std::vector<double> average(networkSize);
-        std::vector<double> temp(networkSize);
-        for (int core=0; core<fileNum; ++core){
-            coreNum = core;
-            ensembleSize = ensembleList[core];
-            const std::string readFile = directory + "secondGiant/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            readCSV(readFile, temp);
-            average += temp;
+        else{
+            min = int_min;
+            value = int_value;
         }
-        average /= fileNum;
-        ensembleSize = totalEnsemble;
-        coreNum = 0;
-        const std::string writeFile1 = directory + "secondGiant/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-        const std::string writeFile2 = directory + "secondGiant/average/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile1, average);
-        writeCSV(writeFile2, average);
-    }
 
-    //! Inter Event Time
-    void average_interEventTime(){
-        //* average
-        std::map<double, double> total;
-        std::map<double, int> sampled;
-        for (auto state : states){
-            std::map<double, double> average;
-            std::map<double, int> sampledAverage;
-            std::vector<std::vector<double>> temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "interEventTime/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-                readCSV(readFile, temp);
-                for (auto e : temp){
-                    average[e[0]] += e[1];
-                    ++sampledAverage[e[0]];
+        //* Log Binning
+        std::map<double, double> binned;
+        std::map<double, int> sampledLogBin;
+        for (auto it=t_raw.begin(); it!=t_raw.end(); ++it){
+            for (int i=0; i<logBinNum; ++i){
+                if (min[i+1] > it->first){
+                    binned[value[i]] += it->second;
+                    ++sampledLogBin[value[i]];
+                    break;
                 }
             }
-            for (auto it=sampledAverage.begin(); it!=sampledAverage.end(); ++it){
-                average[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            coreNum = 0;
-            const std::string writeFile1 = directory + "interEventTime/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            writeCSV(writeFile1, average);
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                total[it->first] += it->second;
-                ++sampled[it->first];
-            }
         }
-        for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-            total[it->first] /= it->second;
+        binned /= sampledLogBin;
+        return binned;
+
+    }
+
+    //! time vs X
+    void time_X(const std::string& t_observable){
+        const std::string directory = rootDirectory + t_observable + "/";
+        std::vector<double> average(networkSize);
+        std::vector<double> temp(networkSize);
+        for (int core=0; core<fileNum; ++core){
+            const std::string readFile = directory + defaultFileName(networkSize, acceptanceThreshold, ensembleList[core], core);
+            readCSV(readFile, temp);
+            average += temp;
         }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile2 = directory + "interEventTime/average/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile2, total);
+        average /= fileNum;
+        const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
+        const std::string writeFile2 = directory + "average/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
+        writeCSV(writeFile1, average);
+        writeCSV(writeFile2, average);
+    }
+
+    //! time vs X with log binning w.r.t t_c-t
+    void logBin_time_X(const std::string& t_observable){
+        const std::string directory = rootDirectory + t_observable + "/";
+
+        std::map<double, double> merge;
+        std::map<double, int> sampledMerge;
+        for (auto state : states){
+            //* average
+            const std::map<double, double> avg = average(directory + state + "/", 0.0);
+            const std::string writeFile1 = directory + state + "/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
+            writeCSV(writeFile1, avg);
+
+            //* merge
+            merge += avg;
+            sampleNum(sampledMerge, avg);
+        }
+        merge /= sampledMerge;
+        const std::string writeFile3 = directory + "merge/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
+        writeCSV(writeFile3, merge);
 
         //* log bin w.r.t t_c-t
-        std::map<double, double> result;
-        std::map<double, int> sampledLogBin;
-        for (auto it=total.begin(); it!=total.end(); ++it){
-            bool stop = true;
-            const double deltaT = t_c-it->first;
-            for (int i=0; i<logBinNum; ++i){
-                if (logBinMin[i] <= deltaT && deltaT < logBinMax[i]){
-                    result[logBinned[i]] += it->second;
-                    ++sampledLogBin[logBinned[i]];
-                    stop = false;
-                    break;
-                }
-            }
-            if (stop){
-                break;
-            }
-        }
-        for (auto it=sampledLogBin.begin(); it!=sampledLogBin.end(); ++it){
-            result[it->first] /= it->second;
-        }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile3 = directory + "interEventTime/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile3, result);
+        merge = minus_first(t_c, merge);
+        const std::map<double, double> binned = logBin(merge);
+        const std::string writeFile2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
+        writeCSV(writeFile2, binned);
     }
 
-    //! Delta Acceptance
-    void average_deltaAcceptance(){
-        //* average
-        std::map<double, double> total;
-        std::map<double, int> sampled;
+
+    //! Check point distribution
+    //* t_c : only for type check
+    template <typename T>
+    void checkPointDistribution(const std::string& t_observable, const T& t_check){
+        const std::string directory = rootDirectory + t_observable + "/";
+        std::vector<double> checkPointList;
+        if (t_observable == "orderParameterDistribution"){
+            checkPointList = time_orderParameterDistribution;
+        }
+        else if (t_observable == "clusterSizeDistribution"){
+            checkPointList = orderParameter_clusterSizeDistribution;
+        }
+
+        for (const double& checkPoint : checkPointList){
+            //* average
+            const std::map<T, double> avg = averageDistribution(t_observable, directory, t_check, checkPoint);
+            const std::string writeFile1 = directory + generalFileName(t_observable, networkSize, acceptanceThreshold, totalEnsemble, checkPoint, 0);
+            writeCSV(writeFile1, avg);
+
+            //* Log Binning
+            if (t_observable == "orderParameterDistribution"){
+                const std::string writeFile2 = directory + "average/" + filename_time(networkSize, acceptanceThreshold, totalEnsemble, checkPoint);
+                writeCSV(writeFile2, avg);
+            }
+            else if (t_observable == "clusterSizeDistribution"){
+                const std::map<double, double> binned = logBin(avg);
+                const std::string writeFile2 = directory + "logBin/" + filename_orderParameter(networkSize, acceptanceThreshold, totalEnsemble, checkPoint);
+                writeCSV(writeFile2, binned);
+            }
+        }
+    }
+
+    //! Distribution of 'keys' distinguished by before and during jump
+    //* t_c : only for type check
+    template <typename T>
+    void distribution(const std::string& t_observable, const T& t_check){
         for (auto state : states){
-            std::map<double, double> average;
-            std::map<double, int> sampledAverage;
-            std::vector<std::vector<double>> temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "deltaAcceptance/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-                readCSV(readFile, temp);
-                for (auto e : temp){
-                    average[e[0]] += e[1];
-                    ++sampledAverage[e[0]];
-                }
-            }
-            for (auto it=sampledAverage.begin(); it!=sampledAverage.end(); ++it){
-                average[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            coreNum = 0;
-            const std::string writeFile1 = directory + "deltaAcceptance/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            writeCSV(writeFile1, average);
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                total[it->first] += it->second;
-                ++sampled[it->first];
-            }
-        }
-        for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-            total[it->first] /= it->second;
-        }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile2 = directory + "deltaAcceptance/average/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile2, total);
+            const std::string directory = rootDirectory + t_observable + "/" + state + "/";
 
-        //* log bin w.r.t t_c-t
-        std::map<double, double> result;
-        std::map<double, int> sampledLogBin;
-        for (auto it=total.begin(); it!=total.end(); ++it){
-            bool stop = true;
-            const double deltaT = t_c-it->first;
-            for (int i=0; i<logBinNum; ++i){
-                if (logBinMin[i] <= deltaT && deltaT < logBinMax[i]){
-                    result[logBinned[i]] += it->second;
-                    ++sampledLogBin[logBinned[i]];
-                    stop = false;
-                    break;
-                }
-            }
-            if (stop){
-                break;
-            }
-        }
-        for (auto it=sampledLogBin.begin(); it!=sampledLogBin.end(); ++it){
-            result[it->first] /= it->second;
-        }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile3 = directory + "deltaAcceptance/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile3, result);
-    }
-
-    //! Order Parameter Distribution
-    void average_orderParameterDistribution(){
-        for (const double& t : time_orderParameterDistribution){
-            std::map<double, double> average, temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "orderParameterDistribution/" + filename_time(networkSize, acceptanceThreshold, ensembleSize, t, coreNum);
-                readCSV(readFile, temp);
-                for (auto it=temp.begin(); it!=temp.end(); ++it){
-                    average[it->first] += it->second;
-                }
-            }
-            double tot = 0.0;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                tot += it->second;
-            }
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                it->second /= tot;
-            }
-            ensembleSize = totalEnsemble;
-            coreNum = 0;
-            const std::string writeFile1 = directory + "orderParameterDistribution/" + filename_time(networkSize, acceptanceThreshold, ensembleSize, t, coreNum);
-            const std::string writeFile2 = directory + "orderParameterDistribution/average/" + filename_time(networkSize, acceptanceThreshold, ensembleSize, t);
-            writeCSV(writeFile1, average);
-            writeCSV(writeFile2, average);
-        }
-    }
-
-    //! Cluster Size Distribution
-    void average_clusterSizeDistribution(){
-        for (const double& op : orderParameter_clusterSizeDistribution){
             //* average
-            std::map<double, double> average, temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "clusterSizeDistribution/" + filename_orderParameter(networkSize, acceptanceThreshold, ensembleSize, op, coreNum);
-                readCSV(readFile, temp);
-                for (auto it=temp.begin(); it!=temp.end(); ++it){
-                    average[it->first] += it->second;
-                }
-            }
-            double tot = 0.0;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                tot += it->second;
-            }
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                it->second /= tot;
-            }
-            ensembleSize = totalEnsemble;
-            coreNum = 0;
-            const std::string writeFile1 = directory + "clusterSizeDistribution/" + filename_orderParameter(networkSize, acceptanceThreshold, ensembleSize, op, coreNum);
-            writeCSV(writeFile1, average);
+            const std::map<T, double> avg = averageDistribution(t_observable, directory, t_check);
+            const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
+            writeCSV(writeFile1, avg);
 
-            //* Log Bin
-            std::map<double, double> result;
-            std::map<double, int> sampled;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                for (int i=0; i<logBinNum; ++i){
-                    if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                        result[LogBinned[i]] += it->second;
-                        ++sampled[LogBinned[i]];
-                        break;
-                    }
-                }
-            }
-            for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-                result[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            const std::string writeFile3 = directory + "clusterSizeDistribution/logBin/" + filename_orderParameter(networkSize, acceptanceThreshold, ensembleSize, op, coreNum);
-            writeCSV(writeFile3, result);
+            //* Log binning
+            const std::map<double, double> binned = logBin(avg);
+            const std::string writeFile2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
+            writeCSV(writeFile2, binned);
         }
     }
 
-    //! Age Distribution
-    void average_ageDistribution(){
-        for (auto state: states){
-            //* average
-            std::map<int, double> average, temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "ageDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-                readCSV(readFile, temp);
-                for (auto it=temp.begin(); it!=temp.end(); ++it){
-                    average[it->first] += it->second;
-                }
-            }
-            double tot = 0.0;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                tot += it->second;
-            }
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                it->second /= tot;
-            }
-            coreNum = 0;
-            ensembleSize = totalEnsemble;
-            const std::string writeFile1 = directory + "ageDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            writeCSV(writeFile1, average);
+    //! X vs Delta Acceptance
+    //* t_c : only for type check
+    template <typename T>
+    void X_deltaAcceptance(const std::string&  t_observable, const T& t_check){
+        const std::string directory = rootDirectory + t_observable + "/";
 
-            //* Log Bin
-            std::map<double, double> result;
-            std::map<double, int> sampled;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                for (int i=0; i<logBinNum; ++i){
-                    if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                        result[LogBinned[i]] += it->second;
-                        ++sampled[LogBinned[i]];
-                        break;
-                    }
-                }
-            }
-            for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-                result[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            const std::string writeFile3 = directory + "ageDistribution/" + state +"/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-            writeCSV(writeFile3, result);
-        }
-    }
-
-    //! Inter Event Time Distribution
-    void average_interEventTimeDistribution(){
-        for (auto state : states){
-            //* average
-            std::map<int, double> average, temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "interEventTimeDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-                readCSV(readFile, temp);
-                for (auto it=temp.begin(); it!=temp.end(); ++it){
-                    average[it->first] += it->second;
-                }
-            }
-            double tot = 0.0;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                tot += it->second;
-            }
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                it->second /= tot;
-            }
-            coreNum = 0;
-            ensembleSize = totalEnsemble;
-            const std::string writeFile1 = directory + "interEventTimeDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            writeCSV(writeFile1, average);
-
-            //* Log Bin
-            std::map<double, double> result;
-            std::map<double, int> sampled;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                for (int i=0; i<logBinNum; ++i){
-                    if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                        result[LogBinned[i]] += it->second;
-                        ++sampled[LogBinned[i]];
-                        break;
-                    }
-                }
-            }
-            for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-                result[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            const std::string writeFile3 = directory + "interEventTimeDistribution/" + state +"/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-            writeCSV(writeFile3, result);
-        }
-    }
-
-    //! Delta Upper Bound Distribution
-    void average_deltaUpperBoundDistribution(){
-        for (auto state : states){
-            //* average
-            std::map<int, double> average, temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "deltaUpperBoundDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-                readCSV(readFile, temp);
-                for (auto it=temp.begin(); it!=temp.end(); ++it){
-                    average[it->first] += it->second;
-                }
-            }
-            double tot = 0.0;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                tot += it->second;
-            }
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                it->second /= tot;
-            }
-            coreNum = 0;
-            ensembleSize = totalEnsemble;
-            const std::string writeFile1 = directory + "deltaUpperBoundDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            writeCSV(writeFile1, average);
-
-            //* Log Bin
-            std::map<double, double> result;
-            std::map<double, int> sampled;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                for (int i=0; i<logBinNum; ++i){
-                    if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                        result[LogBinned[i]] += it->second;
-                        ++sampled[LogBinned[i]];
-                        break;
-                    }
-                }
-            }
-            for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-                result[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            const std::string writeFile3 = directory + "deltaUpperBoundDistribution/" + state +"/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-            writeCSV(writeFile3, result);
-        }
-    }
-
-    //! Delta Acceptance Distribution
-    void average_deltaAcceptanceDistribution(){
-        for (auto state : states){
-            //* average
-            std::map<double, double> average, temp;
-            for (int core=0; core<fileNum; ++core){
-                coreNum = core;
-                ensembleSize = ensembleList[core];
-                const std::string readFile = directory + "deltaAcceptanceDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-                readCSV(readFile, temp);
-                for (auto it=temp.begin(); it!=temp.end(); ++it){
-                    average[it->first] += it->second;
-                }
-            }
-            double tot = 0.0;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                tot += it->second;
-            }
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                it->second /= tot;
-            }
-            ensembleSize = totalEnsemble;
-            coreNum = 0;
-            const std::string writeFile1 = directory + "deltaAcceptanceDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            writeCSV(writeFile1, average);
-
-            //* log bin
-            std::map<double, double> result;
-            std::map<double, int> sampled;
-            for (auto it=average.begin(); it!=average.end(); ++it){
-                for (int i=0; i<logBinNum; ++i){
-                    if (logBinMin[i] <= it->first && it->first < logBinMax[i]){
-                        result[logBinned[i]] += it->second;
-                        ++sampled[logBinned[i]];
-                        break;
-                    }
-                }
-            }
-            for (auto it=sampled.begin(); it!=sampled.end(); ++it){
-                result[it->first] /= it->second;
-            }
-            ensembleSize = totalEnsemble;
-            const std::string writeFile3 = directory + "deltaAcceptanceDistribution/" + state + "/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-            writeCSV(writeFile3, result);
-        }
-    }
-
-
-    //! Inter Event Time vs Delta Acceptance
-    void average_interEventTime_DeltaAcceptance(){
         //* average
-        std::map<int, double> average, temp;
-        std::map<int, int> average_sampled;
-        for (int core=0; core<fileNum; ++core){
-            coreNum = core;
-            ensembleSize = ensembleList[core];
-            const std::string readFile = directory + "interEventTime_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            readCSV(readFile, temp);
-            for (auto it=temp.begin(); it!=temp.end(); ++it){
-                average[it->first] += it->second;
-                ++average_sampled[it->first];
-            }
-        }
-        for (auto it=average.begin(); it!=average.end(); ++it){
-            it->second /= average_sampled[it->first];
-        }
-        ensembleSize = totalEnsemble;
-        coreNum = 0;
-        const std::string writeFile1 = directory + "interEventTime_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-        writeCSV(writeFile1, average);
+        const std::map<T, double> avg = average(directory, t_check);
+        const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
+        writeCSV(writeFile1, avg);
 
-        //* Log Bin iet and log bin delta acceptance
-        std::map<double, double> result;
-        std::map<double, int> sampled;
-        for (auto it=average.begin(); it!=average.end(); ++it){
-            for (int i=0; i<logBinNum; ++i){
-                if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                    result[LogBinned[i]] += it->second;
-                    ++sampled[LogBinned[i]];
-                    break;
-                }
-            }
-        }
-        for (auto it=result.begin(); it!=result.end(); ++it){
-            it->second /= sampled[it->first];
-        }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile3 = directory + "interEventTime_DeltaAcceptance/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile3, result);
+        //* Log Binning
+        const std::map<double, double> binned = logBin(avg);
+        const std::string writeFile2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
+        writeCSV(writeFile2, binned);
+
     }
 
-    //! Upper Bound vs Delta Acceptance
-    void average_upperBound_DeltaAcceptance(){
-        //* average
-        std::map<int, double> average, temp;
-        std::map<int, int> average_sampled;
-        for (int core=0; core<fileNum; ++core){
-            coreNum = core;
-            ensembleSize = ensembleList[core];
-            const std::string readFile = directory + "upperBound_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            readCSV(readFile, temp);
-            for (auto it=temp.begin(); it!=temp.end(); ++it){
-                average[it->first] += it->second;
-                ++average_sampled[it->first];
-            }
-        }
-        for (auto it=average.begin(); it!=average.end(); ++it){
-            it->second /=average_sampled[it->first];
-        }
-        ensembleSize = totalEnsemble;
-        coreNum = 0;
-        const std::string writeFile1 = directory + "upperBound_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-        writeCSV(writeFile1, average);
+    //* Average selected observables
+    void average(){
+        using namespace linearAlgebra;
 
-        //* Log Bin
-        std::map<double, double> result;
-        std::map<double, int> sampled;
-        for (auto it=average.begin(); it!=average.end(); ++it){
-            for (int i=0; i<logBinNum; ++i){
-                if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                    result[LogBinned[i]] += it->second;
-                    ++sampled[LogBinned[i]];
-                    break;
-                }
-            }
-        }
-        for (auto it=result.begin(); it!=result.end(); ++it){
-            it->second /= sampled[it->first];
-        }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile3 = directory + "upperBound_DeltaAcceptance/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile3, result);
-    }
+        //! Order Parameter
+        if (process_orderParameter){time_X("orderParameter");}
 
+        //! Mean Cluster Size
+        if (process_meanClusterSize){time_X("meanClusterSize");}
 
-    //! Delta Upper Bound vs Delta Acceptance
-    void average_deltaUpperbound_DeltaAcceptance(){
-        //* average
-        std::map<int, double> average, temp;
-        std::map<int, int> average_sampled;
-        for (int core=0; core<fileNum; ++core){
-            coreNum = core;
-            ensembleSize = ensembleList[core];
-            const std::string readFile = directory + "deltaUpperBound_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            readCSV(readFile, temp);
-            for (auto it=temp.begin(); it!=temp.end(); ++it){
-                average[it->first] += it->second;
-                ++average_sampled[it->first];
-            }
-        }
-        for (auto it=average.begin(); it!=average.end(); ++it){
-            it->second /=average_sampled[it->first];
-        }
-        ensembleSize = totalEnsemble;
-        coreNum = 0;
-        const std::string writeFile1 = directory + "deltaUpperBound_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-        writeCSV(writeFile1, average);
+        //! Second giant
+        if (process_secondGiant){time_X("secondGiant");}
 
-        //* Log Bin
-        std::map<double, double> result;
-        std::map<double, int> sampled;
-        for (auto it=average.begin(); it!=average.end(); ++it){
-            for (int i=0; i<logBinNum; ++i){
-                if (LogBinMin[i] <= it->first && it->first < LogBinMax[i]){
-                    result[LogBinned[i]] += it->second;
-                    ++sampled[LogBinned[i]];
-                    break;
-                }
-            }
-        }
-        for (auto it=result.begin(); it!=result.end(); ++it){
-            it->second /= sampled[it->first];
-        }
-        ensembleSize = totalEnsemble;
-        const std::string writeFile3 = directory + "deltaUpperBound_DeltaAcceptance/logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize);
-        writeCSV(writeFile3, result);
+        //! Inter Event Time
+        if (process_interEventTime){logBin_time_X("interEventTime");}
+
+        //! Delta Acceptance
+        if (process_deltaAcceptance){logBin_time_X("deltaAcceptance");}
+
+        //! Order Parameter Distribution
+        if (process_orderParameterDistribution){checkPointDistribution("orderParameterDistribution", 0.0);}
+
+        //! Cluster Size Distribution
+        if (process_clusterSizeDistribution){checkPointDistribution("clusterSizeDistribution", 0);}
+
+        //! Age Distribution
+        if (process_ageDistribution){distribution("ageDistribution", 0);}
+
+        //! Inter Event Time Distribution
+        if (process_interEventTimeDistribution){distribution("interEventTimeDistribution", 0);}
+
+        //! Delta Upper bound Distribution
+        if (process_deltaUpperBoundDistribution){distribution("deltaUpperBoundDistribution", 0);}
+
+        //! Delta Acceptance Distribution
+        if (process_deltaAcceptanceDistribution){distribution("deltaAcceptanceDistribution", 0.0);}
+
+        //! Inter Event Time vs Delta Acceptance
+        if (process_interEventTime_DeltaAcceptance){X_deltaAcceptance("interEventTime_DeltaAcceptance", 0);}
+
+        //! Upper Bound vs Delta Acceptance
+        if (process_upperBound_DeltaAcceptance){X_deltaAcceptance("upperBound_DeltaAcceptance", 0);}
+
+        //! Delta Upper Bound vs Delta Acceptance
+        if (process_deltaUpperBound_DeltaAcceptance){X_deltaAcceptance("deltaUpperBound_DeltaAcceptance", 0);}
     }
 }//* End of namespace mBFW::data
