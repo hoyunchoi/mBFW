@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 
 #include "../library-Git/stringFormat.hpp"
 
@@ -14,8 +15,8 @@ namespace mBFW{
     static const double m_a = 0.05;
     static double m_c;
     static double t_c;
-    static std::vector<double> time_orderParameterDistribution;
-    static std::vector<double> orderParameter_clusterSizeDistribution;
+    static std::set<double> time_orderParameterDistribution;
+    static std::set<double> orderParameter_clusterSizeDistribution;
     static const std::vector<std::string> states = {"before", "during"};
     const std::string rootDirectory = "../data/mBFW/";
 

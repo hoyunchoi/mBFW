@@ -65,7 +65,7 @@ namespace mBFW::data{
         }
 
         //! pre-defined parameters from "parameter.hpp"
-        std::tie(time_orderParameterDistribution, orderParameter_clusterSizeDistribution, m_c, t_c) = getParameters(networkSize, acceptanceThreshold);
+        std::tie(m_c, t_c, time_orderParameterDistribution, orderParameter_clusterSizeDistribution) = mBFW::parameters::pre_defined(networkSize, acceptanceThreshold);
     }
 
     //! average process
@@ -181,7 +181,7 @@ namespace mBFW::data{
     template <typename T>
     void checkPointDistribution(const std::string& t_observable, const T& t_check){
         const std::string directory = rootDirectory + t_observable + "/";
-        std::vector<double> checkPointList;
+        std::set<double> checkPointList;
         if (t_observable == "orderParameterDistribution"){
             checkPointList = time_orderParameterDistribution;
         }
