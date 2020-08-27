@@ -193,3 +193,7 @@ dmypy.json
 .pytype/
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+
+# Temporary file for reference
+Paper Graph.ipynb
