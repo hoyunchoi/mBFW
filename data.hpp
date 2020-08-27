@@ -124,7 +124,7 @@ namespace mBFW::data{
         std::map<double, int> sampledLogBin;
         for (auto it=t_raw.begin(); it!=t_raw.end(); ++it){
             for (int i=0; i<logBinNum; ++i){
-                if (min[i+1] > it->first){
+                if (min[i+1] > it->first && it->first){
                     binned[value[i]] += it->second;
                     ++sampledLogBin[value[i]];
                     break;

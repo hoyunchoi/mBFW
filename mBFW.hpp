@@ -39,34 +39,34 @@ namespace mBFW{
 
     //! File name conventions
     const std::string defaultFileName(const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const int& t_coreNum=-1, const int& t_randomEngineSeed=-1){
-        const std::string filename = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize);
+        const std::string fileName = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize);
 
         //* name for averaged or binned file
         if (t_coreNum==-1 && t_randomEngineSeed==-1){
-            return filename + ".txt";
+            return fileName + ".txt";
         }
 
         //* name for regular file
         else if (t_randomEngineSeed == -1){
-            return filename + "-" + std::to_string(t_coreNum) + ".txt";
+            return fileName + "-" + std::to_string(t_coreNum) + ".txt";
         }
 
         //* name for dynamics
         else{
-            return filename + "-" + std::to_string(t_randomEngineSeed) + ".txt";
+            return fileName + "-" + std::to_string(t_randomEngineSeed) + ".txt";
         }
     }
 
     const std::string filename_time(const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const double& t_time, const int& t_coreNum=-1){
-        const std::string filename = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize) + ",T"+to_stringWithPrecision(t_time,4);
+        const std::string fileName = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize) + ",T"+to_stringWithPrecision(t_time,4);
 
-        return t_coreNum==-1 ? filename + ".txt" : filename + "-"+std::to_string(t_coreNum)+".txt";
+        return t_coreNum==-1 ? fileName + ".txt" : fileName + "-"+std::to_string(t_coreNum)+".txt";
     }
 
     const std::string filename_orderParameter(const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const double& t_orderParameter, const int& t_coreNum=-1){
-        const std::string filename = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize) + ",OP"+to_stringWithPrecision(t_orderParameter,4);
+        const std::string fileName = "N" + to_stringWithExponent((double)t_networkSize, 1) + ",G"+to_stringWithPrecision(t_acceptanceThreshold,1) + ",E"+std::to_string(t_ensembleSize) + ",OP"+to_stringWithPrecision(t_orderParameter,4);
 
-        return t_coreNum==-1 ? filename + ".txt" : filename + "-"+std::to_string(t_coreNum)+".txt";
+        return t_coreNum==-1 ? fileName + ".txt" : fileName + "-"+std::to_string(t_coreNum)+".txt";
     }
 
     const std::string generalFileName(const std::string& t_observable, const int& t_networkSize, const double& t_acceptanceThreshold, const int&t_ensembleSize, const double& t_checkPoint, const int& t_coreNum=-1){

@@ -146,7 +146,7 @@ namespace mBFW::generate{
     }
     void calculate_deltaAcceptanceDistribution(const std::string& t_currentState, const double& t_currentDeltaAcceptance){
         for (int i=0; i<logBinNum; ++i){
-            if (minBin[i+1] > t_currentDeltaAcceptance){
+            if (minBin[i+1] > t_currentDeltaAcceptance && t_currentDeltaAcceptance){
                 ++deltaAcceptanceDistribution[t_currentState][i];
                 break;
             }
