@@ -1,49 +1,55 @@
+import matplotlib
 import matplotlib.pyplot as plt
 
-# Default parameters for plot
-#* text
-plt.rc('text', usetex = True)
-plt.rc('font', size = 50)
+new_rc_params = {
+    # Default parameters for plot
+    #* text
+    'text.usetex' : True,
+    'font.size' : 50,
 
-#* figure
-plt.rc('figure', figsize = (10,10))
-plt.rc('axes', linewidth = 3)
+    #* figure
+    'figure.figsize' : (10,10),
+    'axes.linewidth' : 3,
 
-#* line
-plt.rc('lines', linewidth = 4)
-plt.rc('lines', markersize = 15)
+    #* line
+    'lines.linewidth' : 4,
+    'lines.markersize' : 15,
 
-#* legend
-plt.rc('legend', frameon = False)
-plt.rc('legend', fontsize = 40)
-plt.rc('legend', handlelength = 1.0)
-plt.rc('legend', handletextpad = 0.5)
-plt.rc('legend', labelspacing = 0.2)
+    #* legend
+    'legend.frameon' : False,
+    'legend.fontsize' : 40,
+    'legend.handlelength' : 1.0,
+    'legend.handletextpad' : 0.5,
+    'legend.labelspacing' : 0.2,
 
-#* label
-plt.rc('axes', labelsize = 50)
+    #* label
+    'axes.labelsize' : 50,
 
-#* tick
-plt.rc('xtick', direction = 'in')
-plt.rc('ytick', direction = 'in')
-plt.rc('xtick.major', width = 3)
-plt.rc('ytick.major', width = 3)
-plt.rc('xtick.major', size = 10)
-plt.rc('ytick.major', size = 10)
-plt.rc('xtick.major', pad = 10)
-plt.rc('ytick.major', pad = 10)
-plt.rc('xtick.minor', width = 0.5)
-plt.rc('ytick.minor', width = 0.5)
+    #* tick
+    'xtick.direction' : 'in',
+    'ytick.direction' : 'in',
+    'xtick.major.width' : 3,
+    'ytick.major.width' : 3,
+    'xtick.major.size' : 10,
+    'ytick.major.size' : 10,
+    'xtick.minor.width' : 0.5,
+    'ytick.minor.width' : 0.5,
 
-#* tick label
-plt.rc('xtick', labelsize = 36)
-plt.rc('ytick', labelsize = 36)
+    #* tick label
+    'xtick.labelsize' : 36,
+    'ytick.labelsize' : 36,
+    'xtick.major.pad' : 15,
+    'ytick.major.pad' : 15,
 
-#* save
-plt.rc('savefig', dpi = 500)
-plt.rc('savefig', transparent = True)
-plt.rc('savefig', bbox = 'tight')
-plt.rc('savefig', format = 'pdf')
+    #* save
+    'savefig.dpi' : 500,
+    'savefig.transparent' : True,
+    'savefig.bbox' : 'tight',
+    'savefig.format' : 'pdf'
+}
+
+
+matplotlib.rcParams.update(new_rc_params)
 
 if __name__=="__main__":
     print("This is a module draw.py")
