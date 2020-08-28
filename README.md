@@ -11,6 +11,7 @@ root directory = ../data/mBFW/\
 At root directory, the following directory tree is needed
 * orderParameter
     * average
+    * logBin
 * meanClusterSize
     * average
 * secondGiant
