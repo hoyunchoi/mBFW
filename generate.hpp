@@ -274,6 +274,7 @@ namespace mBFW::generate{
         }
         //* Dynamics
         if (process_dynamics){dynamics.reserve(3*networkSize*ensembleSize);}
+;
     } //* End of function mBFW::generate::setParameters
 
     //*-------------------------------------------Run mBFW model ------------------------------------------------------
@@ -296,9 +297,9 @@ namespace mBFW::generate{
             bool findNewNodes = true;
 
             //* initial condition
-            orderParameter[0] += 1.0/networkSize;
-            secondGiant[0] += 1.0/networkSize;
-            meanClusterSize[0] += 1.0;
+            if (process_orderParameter){orderParameter[0] += 1.0/networkSize;}
+            if (process_meanClusterSize){meanClusterSize[0] += 1.0;}
+            if (process_secondGiant){secondGiant[0] += 1.0/networkSize;}
 
             //! Dynamics only for small number of ensembles
             if (process_dynamics && ensembleSize < 5){

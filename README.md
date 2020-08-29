@@ -27,7 +27,7 @@ At root directory, the following directory tree is needed
     * logBin
     * merge
 * orderParameterDistribution
-    * average
+    * linearBin
 * clusterSizeDistribution
     * logBin
 * ageDistribution
