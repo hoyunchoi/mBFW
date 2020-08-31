@@ -57,4 +57,6 @@ At root directory, the following directory tree is needed
 * deltaUpperBound_DeltaAcceptance
     * logBin
 * dynamics
+    * before
+    * during
 

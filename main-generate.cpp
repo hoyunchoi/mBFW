@@ -9,7 +9,7 @@ int main(int argc, char *argv[]){
     const int ensembleSize=std::stoul(argv[3]);
     const std::string machine=argv[4];
     const int coreNum=std::stoul(argv[5]);
-    constexpr int randomEngineSeed = -1;
+    constexpr int randomEngineSeed = 0;
 
     //* Set precision
     double precision;

@@ -3,8 +3,8 @@ import pandas as pd
 import csv, glob
 
 rootDirectory = "../data/mBFW/"
-observables = ["orderParameter", "orderParameter/", "meanClusterSize", "secondGiant" ,"interEventTime" ,"deltaAcceptance" ,"orderParameterDistribution" ,"clusterSizeDistribution" ,"ageDistribution/before" ,"ageDistribution/during", "interEventTimeDistribution/before", "interEventTimeDistribution/during", "deltaUpperBoundDistribution/before", "deltaUpperBoundDistribution/during" ,"deltaAcceptanceDistribution/before","deltaAcceptanceDistribution/during" ,"interEventTime_DeltaAcceptance" ,"upperBound_DeltaAcceptance" ,"deltaUpperBound_DeltaAcceptance", "dynamics"]
-relativePath = ["/average/", "logBin/", "/average/", "/average/", "/logBin/", "/logBin/", "/linearBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/"]
+observables = ["orderParameter", "orderParameter/", "meanClusterSize", "secondGiant" ,"interEventTime" ,"deltaAcceptance" ,"orderParameterDistribution" ,"clusterSizeDistribution" ,"ageDistribution/before" ,"ageDistribution/during", "interEventTimeDistribution/before", "interEventTimeDistribution/during", "deltaUpperBoundDistribution/before", "deltaUpperBoundDistribution/during" ,"deltaAcceptanceDistribution/before","deltaAcceptanceDistribution/during" ,"interEventTime_DeltaAcceptance" ,"upperBound_DeltaAcceptance" ,"deltaUpperBound_DeltaAcceptance", "dynamics", "dynamics/"]
+relativePath = ["/average/", "logBin/", "/average/", "/average/", "/logBin/", "/logBin/", "/linearBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/logBin/", "/before/", "during/"]
 
 directory = {}
 for observable,path in zip(observables, relativePath):

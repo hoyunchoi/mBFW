@@ -46,6 +46,7 @@ namespace mBFW::generate{
     std::function<void(const int&, const double&)> do_interEventTime_DeltaAcceptance;
     std::function<void(const int&, const double&)> do_upperBound_DeltaAcceptance;
     std::function<void(const int&, const double&)> do_deltaUpperBound_DeltaAcceptance;
+    std::function<void(const double&, const int&, const int&, const int&, const int&, const int&, const int&)> do_dynamics;
 
     //! Declaration of observables
     //* X[time] = value of observable X at time
@@ -91,7 +92,7 @@ namespace mBFW::generate{
     std::vector<int> sampledDeltaUpperBound_DeltaAcceptance;
 
     //* Dynamics
-    std::vector<std::vector<int>> dynamics;
+    std::map<std::string, std::vector<std::vector<int>>> dynamics;
 
     //*------------------------------------------- functions for calculating observables ------------------------------------------------------
     void calculate_orderParameter(const int& t_time, const double& t_exactOrderParameter){
@@ -163,6 +164,13 @@ namespace mBFW::generate{
         deltaUpperBound_DeltaAcceptance[t_deltaMaximumClusterSize] += t_currentDeltaAcceptance;
         ++sampledDeltaUpperBound_DeltaAcceptance[t_deltaMaximumClusterSize];
     }
+    void calculate_dynamics(const double& t_exactOrderParameter, const int& t_time, const int& t_trialTime, const int& t_periodTime, const int& t_periodTrialTime, const int& t_maximumClusterSize, const int& t_upperBound){
+        if (t_exactOrderParameter < m_c){
+            std::string currentState;
+            t_exactOrderParameter < m_a ? currentState = "before" : currentState = "during";
+             dynamics[currentState].emplace_back(std::vector<int>{t_time, t_trialTime, t_periodTime, t_periodTrialTime, t_maximumClusterSize, t_upperBound});
+        }
+    }
 
     //*-------------------------------------------Set Parameters for one run------------------------------------------------------
     void setParameters(const int& t_networkSize, const int& t_ensembleSize, const double& t_acceptanceThreshold, const double t_precision, const int& t_coreNum, const int& t_randomEngineSeed, const std::vector<bool> t_observables){
@@ -210,7 +218,7 @@ namespace mBFW::generate{
         process_interEventTime_DeltaAcceptance ? do_interEventTime_DeltaAcceptance = calculate_interEventTime_DeltaAcceptance : do_interEventTime_DeltaAcceptance = [](const int&, const double&){};
         process_upperBound_DeltaAcceptance ? do_upperBound_DeltaAcceptance = calculate_upperBound_DeltaAcceptance : do_upperBound_DeltaAcceptance = [](const int&, const double&){};
         process_deltaUpperBound_DeltaAcceptance ? do_deltaUpperBound_DeltaAcceptance = calculate_deltaUpperBound_DeltaAcceptance : do_deltaUpperBound_DeltaAcceptance = [](const int&, const double&){};
-
+        process_dynamics ? do_dynamics = calculate_dynamics : do_dynamics = [](const double&, const int&, const int&, const int&, const int&, const int&, const int&){};
 
         //! Pre-defined variables
         std::tie(m_c, t_c, time_orderParameterDistribution, orderParameter_clusterSizeDistribution) = mBFW::parameters::pre_defined(networkSize, acceptanceThreshold);
@@ -273,8 +281,17 @@ namespace mBFW::generate{
             sampledDeltaUpperBound_DeltaAcceptance.resize(t_networkSize);
         }
         //* Dynamics
-        if (process_dynamics){dynamics.reserve(3*networkSize*ensembleSize);}
-;
+        if (process_dynamics){
+            if (t_ensembleSize < 5){
+                dynamics["before"].reserve(networkSize*ensembleSize);
+                dynamics["during"].reserve(networkSize*ensembleSize);
+            }
+            else{
+                std::cout<<"To many ensemble size to save dynamics.\n";
+                exit(0);
+            }
+        }
+
     } //* End of function mBFW::generate::setParameters
 
     //*-------------------------------------------Run mBFW model ------------------------------------------------------
@@ -300,11 +317,6 @@ namespace mBFW::generate{
             if (process_orderParameter){orderParameter[0] += 1.0/networkSize;}
             if (process_meanClusterSize){meanClusterSize[0] += 1.0;}
             if (process_secondGiant){secondGiant[0] += 1.0/networkSize;}
-
-            //! Dynamics only for small number of ensembles
-            if (process_dynamics && ensembleSize < 5){
-                dynamics.emplace_back(std::vector<int>{time, trialTime, periodTime, periodTrialTime, model.getMaximumClusterSize(), upperBound});
-            }
 
             //* Do rBFW algorithm until all clusters merge to one
             while (model.getMaximumClusterSize() < networkSize){
@@ -340,6 +352,9 @@ namespace mBFW::generate{
                         peakTrialTime = trialTime;
                         maxAcceptance = (double)time/trialTime;
                     }
+
+                    //! Dynamics
+                    do_dynamics(exactOrderParameter, time, trialTime, periodTime, periodTrialTime, maximumClusterSize, upperBound);
 
                     //! Order Parameter
                     do_orderParameter(time, exactOrderParameter);
@@ -409,11 +424,6 @@ namespace mBFW::generate{
                     ++trialTime;
                     ++periodTrialTime;
                     findNewNodes=true;
-                }
-
-                //! Dynamics only for small number of ensembles
-                if (ensembleSize < 5 && process_dynamics){
-                    dynamics.emplace_back(std::vector<int>{time, trialTime, periodTime, periodTrialTime, model.getMaximumClusterSize(), upperBound});
                 }//* End of one step
             }//* End of network growing (one ensemble)
         } //* End of every ensembles
@@ -619,9 +629,14 @@ namespace mBFW::generate{
             }
             writeCSV(fullFileName, trimmed);
         }
+
+        //! Dynamics
         if (process_dynamics){
-            const std::string fullFileName = rootDirectory + "dynamics/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, -1, randomEngineSeed);
-            writeCSV(fullFileName, dynamics);
+            for (auto state : states){
+                const std::string fullFileName = rootDirectory + "dynamics/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, -1, randomEngineSeed);
+                writeCSV(fullFileName, dynamics[state]);
+
+            }
         }
     }
 }//* End of namespace mBFW::generate
