@@ -6,4 +6,4 @@ ensembleSize=$4
 machine=$5
 coreNum=$6
 
-spg run ${machine} ./compile/${type} ${networkSize} ${g} ${ensembleSize} ${machine} ${coreNum} >> ./log.txt
+spg run ${machine} ./bin/${type} ${networkSize} ${g} ${ensembleSize} ${machine} ${coreNum} >> ./log.txt
