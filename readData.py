@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import csv, glob
+import glob
 
 rootDirectory = "../data/mBFW/"
 observables = ["orderParameter", "orderParameter/", "meanClusterSize", "secondGiant" ,"interEventTime" ,"deltaAcceptance" ,"orderParameterDistribution" ,"clusterSizeDistribution" ,"ageDistribution/before" ,"ageDistribution/during", "interEventTimeDistribution/before", "interEventTimeDistribution/during", "deltaUpperBoundDistribution/before", "deltaUpperBoundDistribution/during" ,"deltaAcceptanceDistribution/before","deltaAcceptanceDistribution/during" ,"interEventTime_DeltaAcceptance" ,"upperBound_DeltaAcceptance" ,"deltaUpperBound_DeltaAcceptance", "dynamics", "dynamics/"]

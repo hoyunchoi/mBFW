@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
     mBFW::generate::setParameters(networkSize, ensembleSize, acceptanceThreshold, precision, coreNum, randomEngineSeed, observables);
     mBFW::generate::run();
     std::chrono::duration<double> sec=std::chrono::system_clock::now()-start;
-    FILE* fp = fopen("log.txt", "w");
+    FILE* fp = fopen("log.txt", "a");
     fprintf(fp, " %.6fs for N=%.1e, g=%.1f, ensemble=%d-%d at %s\n", sec.count(),(double)networkSize, acceptanceThreshold, ensembleSize, coreNum, machine.c_str());
 
     //* save parameters
