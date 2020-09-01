@@ -22,10 +22,6 @@
 
 ### VisualStudioCode ###
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 *.code-workspace
 
 ### VisualStudioCode Patch ###
@@ -164,12 +160,14 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+!.venv
+.venv/*
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+!.venv/requirements.txt
 
 # Spyder project settings
 .spyderproject
