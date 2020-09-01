@@ -196,3 +196,7 @@ dmypy.json
 # Temporary file for reference
 Paper Graph.ipynb
 test.*
+log.txt
+
+# binary files
+bin/
