@@ -5,11 +5,16 @@
 int main(){
     const int networkSize=1280000;
     const double acceptanceThreshold = 0.5;
-    const bool deleteFile = false;
+    const bool deleteFile = true;
 
     const double logBinDelta = 0.1;
+<<<<<<< HEAD
     std::vector<int> ensembleList(2,100);
     ensembleList[0] = 10;
+=======
+    std::vector<int> ensembleList(10,10000);
+    // ensembleList[0] = 5000;
+>>>>>>> c46aa18906d5a70d32bf23a1261491e1d35860ed
 
     //* Determine which observables to calculate
     std::vector<bool> observables(15);
@@ -19,14 +24,24 @@ int main(){
     observables[3] = false;      //! Inter Event Time
     observables[4] = false;      //! Delta Acceptance
     observables[5] = false;      //! Order Parameter Distribution
+<<<<<<< HEAD
     observables[6] = true;      //! Cluster Size Distribution
+=======
+    observables[6] = false;      //! Cluster Size Distribution
+>>>>>>> c46aa18906d5a70d32bf23a1261491e1d35860ed
     observables[7] = false;      //! Age Distribution
     observables[8] = false;      //! Inter Event Time Distribution
     observables[9] = false;      //! Delta Upper Bound Distribution
     observables[10] = false;     //! Delta Acceptance Distribution
+<<<<<<< HEAD
     observables[11] = false;     //! Inter Event Time vs Delta Acceptance
     observables[12] = false;     //! Upper Bound vs Delta Acceptance
     observables[13] = false;     //! Delta Upper Bound vs Delta Acceptance
+=======
+    observables[11] = true;     //! Inter Event Time vs Delta Acceptance
+    observables[12] = true;     //! Upper Bound vs Delta Acceptance
+    observables[13] = true;     //! Delta Upper Bound vs Delta Acceptance
+>>>>>>> c46aa18906d5a70d32bf23a1261491e1d35860ed
     observables[14] = false;    //! Dynamics
 
     auto start = std::chrono::system_clock::now();
