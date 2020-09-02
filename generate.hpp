@@ -64,7 +64,7 @@ namespace mBFW::generate{
 
     //* clusterSizeDistribution[orderParameter] : cluster size distribution at (rounded order parameter)=(orderParameter)
     //* clusterSizeDistribution[orderParameter][cs] : number of cluster of size "cs"
-    std::map<double, std::vector<int>> clusterSizeDistribution;
+    std::map<double, std::vector<long long>> clusterSizeDistribution;
 
     //* interEventTimeDistribution["before"] : inter event time distribution before jump (order parameter < m_a)
     //* interEventTimeDistribution["during"] : inter event time distribution during jump (m_a < order parameter < m_c)
@@ -76,7 +76,7 @@ namespace mBFW::generate{
 
     //* ageDistribution["before"] : age distribution before jump (order parameter < m_a)
     //* ageDistribution["during"] : age distribution during jump (m_a < order parameter < m_c)
-    std::map<std::string, std::vector<int>> ageDistribution;
+    std::map<std::string, std::vector<long long>> ageDistribution;
 
     //* deltaAcceptanceDistribution["before"] : max acceptance distribution befeore jump (order paramter < m_a)
     //* deltaAcceptanceDistribution["during"] : max acceptance distribution during jump (m_a < order paramter < m_c)
