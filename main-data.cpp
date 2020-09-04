@@ -8,7 +8,7 @@ int main(){
     const bool deleteFile = true;
 
     const double logBinDelta = 0.1;
-    std::vector<int> ensembleList(10,10000);
+    std::vector<int> ensembleList(20,10000);
     // ensembleList[0] = 5000;
 
     //* Determine which observables to calculate
