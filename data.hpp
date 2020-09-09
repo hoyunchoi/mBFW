@@ -321,47 +321,51 @@ namespace mBFW::data{
     }
 
     //*------------------------------------------- process the data ------------------------------------------------------
+    void printProcess(const std::string& t_observable){
+        std::cout<<"finished process : "<<t_observable<<"\n";
+    }
+
     void run(){
         //! Order Parameter
-        if (process_orderParameter){time_X("orderParameter");}
+        if (process_orderParameter){time_X("orderParameter"); printProcess("orderParameter");}
 
         //! Mean Cluster Size
-        if (process_meanClusterSize){time_X("meanClusterSize");}
+        if (process_meanClusterSize){time_X("meanClusterSize"); printProcess("meanClusterSize");}
 
         //! Second giant
-        if (process_secondGiant){time_X("secondGiant");}
+        if (process_secondGiant){time_X("secondGiant"); printProcess("secondGiant");}
 
         //! Inter Event Time
-        if (process_interEventTime){logBin_time_X("interEventTime");}
+        if (process_interEventTime){logBin_time_X("interEventTime"); printProcess("interEventTime");}
 
         //! Delta Acceptance
-        if (process_deltaAcceptance){logBin_time_X("deltaAcceptance");}
+        if (process_deltaAcceptance){logBin_time_X("deltaAcceptance"); printProcess("deltaAcceptance");}
 
         //! Order Parameter Distribution
-        if (process_orderParameterDistribution){checkPointDistribution("orderParameterDistribution", 0.0);}
+        if (process_orderParameterDistribution){checkPointDistribution("orderParameterDistribution", 0.0); printProcess("orderParameterDistribution");}
 
         //! Cluster Size Distribution
-        if (process_clusterSizeDistribution){checkPointDistribution("clusterSizeDistribution", 0);}
+        if (process_clusterSizeDistribution){checkPointDistribution("clusterSizeDistribution", 0); printProcess("clusterSizeDistribution");}
 
         //! Age Distribution
-        if (process_ageDistribution){distribution("ageDistribution", 0);}
+        if (process_ageDistribution){distribution("ageDistribution", 0); printProcess("orderParameter");}
 
         //! Inter Event Time Distribution
-        if (process_interEventTimeDistribution){distribution("interEventTimeDistribution", 0);}
+        if (process_interEventTimeDistribution){distribution("interEventTimeDistribution", 0); printProcess("interEventTimeDistribution");}
 
         //! Delta Upper bound Distribution
-        if (process_deltaUpperBoundDistribution){distribution("deltaUpperBoundDistribution", 0);}
+        if (process_deltaUpperBoundDistribution){distribution("deltaUpperBoundDistribution", 0); printProcess("deltaUpperBoundDistribution");}
 
         //! Delta Acceptance Distribution
-        if (process_deltaAcceptanceDistribution){distribution("deltaAcceptanceDistribution", 0.0);}
+        if (process_deltaAcceptanceDistribution){distribution("deltaAcceptanceDistribution", 0.0); printProcess("deltaAcceptanceDistribution");}
 
         //! Inter Event Time vs Delta Acceptance
-        if (process_interEventTime_DeltaAcceptance){X_deltaAcceptance("interEventTime_DeltaAcceptance", 0);}
+        if (process_interEventTime_DeltaAcceptance){X_deltaAcceptance("interEventTime_DeltaAcceptance", 0); printProcess("interEventTime_DeltaAcceptance");}
 
         //! Upper Bound vs Delta Acceptance
-        if (process_upperBound_DeltaAcceptance){X_deltaAcceptance("upperBound_DeltaAcceptance", 0);}
+        if (process_upperBound_DeltaAcceptance){X_deltaAcceptance("upperBound_DeltaAcceptance", 0); printProcess("upperBound_DeltaAcceptance");}
 
         //! Delta Upper Bound vs Delta Acceptance
-        if (process_deltaUpperBound_DeltaAcceptance){X_deltaAcceptance("deltaUpperBound_DeltaAcceptance", 0);}
+        if (process_deltaUpperBound_DeltaAcceptance){X_deltaAcceptance("deltaUpperBound_DeltaAcceptance", 0); printProcess("deltaUpperBound_DeltaAcceptance");}
     }
 }//* End of namespace mBFW::data
