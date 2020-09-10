@@ -38,7 +38,7 @@ namespace mBFW::generate{
     std::function<void(const std::string&, const int&, const int&)> do_interEventTime;
     std::function<void(const std::string&, const int&, const double&)> do_deltaAcceptance;
     std::function<void(const int&, const int&)> do_orderParameterDistribution;
-    std::function<void(const double&, const NZ_Network&)> do_clusterSizeDistribution;
+    std::function<void(const double&, NZ_Network&)> do_clusterSizeDistribution;
     std::function<void(const double&, const NZ_Network&)> do_ageDistribution;
     std::function<void(const std::string&, const int&)> do_interEventTimeDistribution;
     std::function<void(const std::string&, const int&)> do_deltaUpperBoundDistribution;
@@ -65,6 +65,8 @@ namespace mBFW::generate{
     //* clusterSizeDistribution[orderParameter] : cluster size distribution at (rounded order parameter)=(orderParameter)
     //* clusterSizeDistribution[orderParameter][cs] : number of cluster of size "cs"
     std::map<double, std::vector<long long>> clusterSizeDistribution;
+    // std::map<double, long long> sampledClusterSizeDistribution;
+    // std::map<double, std::vector<int>> sampledClusterSizeDistribution;
 
     //* interEventTimeDistribution["before"] : inter event time distribution before jump (order parameter < m_a)
     //* interEventTimeDistribution["during"] : inter event time distribution during jump (m_a < order parameter < m_c)
@@ -119,13 +121,15 @@ namespace mBFW::generate{
             ++orderParameterDistribution[*it][t_maximumClusterSize];
         }
     }
-    void calculate_clusterSizeDistribution(const double& t_exactOrderParameter, const NZ_Network& t_model){
+    void calculate_clusterSizeDistribution(const double& t_exactOrderParameter, NZ_Network& t_model){
         const double roundedOrderParameter = round(t_exactOrderParameter*precision)/precision;
         auto it = std::find(orderParameter_clusterSizeDistribution.begin(), orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
         if (it != orderParameter_clusterSizeDistribution.end()){
+            // ++sampledClusterSizeDistribution[*it];
             const std::map<int,int> sortedCluster = t_model.getSortedCluster();
             for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
                 clusterSizeDistribution[*it][it2->first] += it2->second;
+                // ++sampledClusterSizeDistribution[*it][it2->first];
             }
         }
     }
@@ -210,7 +214,7 @@ namespace mBFW::generate{
         process_interEventTime ? do_interEventTime = calculate_interEventTime : do_interEventTime = [](const std::string&, const int&, const int&){};
         process_deltaAcceptance ? do_deltaAcceptance = calculate_deltaAcceptance : do_deltaAcceptance = [](const std::string&, const int&, const double&){};
         process_orderParameterDistribution ? do_orderParameterDistribution = calculate_orderParameterDistribution : do_orderParameterDistribution = [](const int&, const int&){};
-        process_clusterSizeDistribution ? do_clusterSizeDistribution = calculate_clusterSizeDistribution : do_clusterSizeDistribution = [](const double&, const NZ_Network&){};
+        process_clusterSizeDistribution ? do_clusterSizeDistribution = calculate_clusterSizeDistribution : do_clusterSizeDistribution = [](const double&, NZ_Network&){};
         process_ageDistribution ? do_ageDistribution = calculate_ageDistribution : do_ageDistribution = [](const double&, const NZ_Network&){};
         process_interEventTimeDistribution ? do_interEventTimeDistribution = calculate_interEventTimeDistribution : do_interEventTimeDistribution = [](const std::string&, const int&){};
         process_deltaUpperBoundDistribution ? do_deltaUpperBoundDistribution = calculate_deltaUpperBoundDistribution : do_deltaUpperBoundDistribution = [](const std::string&, const int&){};
@@ -226,59 +230,60 @@ namespace mBFW::generate{
 
         //! Output variables (Observables)
         //* time-X
-        if (process_orderParameter){orderParameter.resize(t_networkSize);}
-        if (process_meanClusterSize){meanClusterSize.resize(t_networkSize);}
-        if (process_secondGiant){secondGiant.resize(t_networkSize);}
+        if (process_orderParameter){orderParameter.assign(t_networkSize, 0.0);}
+        if (process_meanClusterSize){meanClusterSize.assign(t_networkSize, 0.0);}
+        if (process_secondGiant){secondGiant.assign(t_networkSize, 0.0);}
         for (auto state : states){
             if (process_interEventTime){
-                interEventTime[state].resize(t_networkSize);
-                sampledInterEventTime[state].resize(t_networkSize);
-                }
+                interEventTime[state].assign(t_networkSize, 0.0);
+                sampledInterEventTime[state].assign(t_networkSize, 0);
+            }
             if (process_deltaAcceptance){
-                deltaAcceptance[state].resize(t_networkSize);
-                sampledDeltaAcceptance[state].resize(t_networkSize);
+                deltaAcceptance[state].assign(t_networkSize, 0.0);
+                sampledDeltaAcceptance[state].assign(t_networkSize, 0);
             }
         }
 
         //* Distributions
         if (process_orderParameterDistribution){
             for (const double& t : time_orderParameterDistribution){
-                orderParameterDistribution[t].resize(t_networkSize);
+                orderParameterDistribution[t].assign(t_networkSize, 0);
             }
         }
         if (process_clusterSizeDistribution){
             for (const double& m : orderParameter_clusterSizeDistribution){
-                clusterSizeDistribution[m].resize(t_networkSize);
+                clusterSizeDistribution[m].assign(t_networkSize, 0);
+                // sampledClusterSizeDistribution[m].assign(t_networkSize, 0);
             }
         }
         for (auto state : states){
-            if (process_interEventTimeDistribution){interEventTimeDistribution[state].resize(t_networkSize);}
-            if (process_deltaUpperBoundDistribution){deltaUpperBoundDistribution[state].resize(t_networkSize);}
-            if (process_ageDistribution){ageDistribution[state].resize(t_networkSize);}
+            if (process_interEventTimeDistribution){interEventTimeDistribution[state].assign(t_networkSize, 0);}
+            if (process_deltaUpperBoundDistribution){deltaUpperBoundDistribution[state].assign(t_networkSize, 0);}
+            if (process_ageDistribution){ageDistribution[state].assign(t_networkSize, 0);}
             if (process_deltaAcceptanceDistribution){
                 const std::vector<double> exponent = linearAlgebra::arange(-8.0, 0.0, 0.01);
                 minBin = linearAlgebra::elementPow(10.0, exponent);
                 logBinNum = exponent.size()-1;
-                valueBin.resize(logBinNum);
+                valueBin.assign(logBinNum, 0.0);
                 for (int i=0; i<logBinNum; ++i){
                     valueBin[i] = sqrt(minBin[i] * minBin[i+1]);
                 }
-                deltaAcceptanceDistribution[state].resize(logBinNum);
+                deltaAcceptanceDistribution[state].assign(logBinNum, 0);
             }
         }
 
         //* X-DeltaAcceptance
         if (process_interEventTime_DeltaAcceptance){
-            interEventTime_DeltaAcceptance.resize(t_networkSize);
-            sampledInterEventTime_DeltaAcceptance.resize(t_networkSize);
+            interEventTime_DeltaAcceptance.assign(t_networkSize, 0.0);
+            sampledInterEventTime_DeltaAcceptance.assign(t_networkSize, 0);
         }
         if (process_upperBound_DeltaAcceptance){
-            upperBound_DeltaAcceptance.resize(t_networkSize);
-            sampledUpperBound_DeltaAcceptance.resize(t_networkSize);
+            upperBound_DeltaAcceptance.assign(t_networkSize, 0.0);
+            sampledUpperBound_DeltaAcceptance.assign(t_networkSize, 0);
         }
         if (process_deltaUpperBound_DeltaAcceptance){
-            deltaUpperBound_DeltaAcceptance.resize(t_networkSize);
-            sampledDeltaUpperBound_DeltaAcceptance.resize(t_networkSize);
+            deltaUpperBound_DeltaAcceptance.assign(t_networkSize, 0.0);
+            sampledDeltaUpperBound_DeltaAcceptance.assign(t_networkSize, 0);
         }
         //* Dynamics
         if (process_dynamics){
@@ -510,10 +515,11 @@ namespace mBFW::generate{
 
                 //* save only useful data
                 std::map<int, double> trimmed;
-                const double tot = std::accumulate(clusterSizeDistribution[op].begin(), clusterSizeDistribution[op].end(), 0.0);
+                const long long tot = std::accumulate(clusterSizeDistribution[op].begin(), clusterSizeDistribution[op].end(), 0);
+                // const double tot = std::accumulate(clusterSizeDistribution[op].begin(), clusterSizeDistribution[op].end(), 0.0);
                 for (int cs=0; cs<networkSize; ++cs){
                     if (clusterSizeDistribution[op][cs]){
-                        trimmed[cs] = clusterSizeDistribution[op][cs]/tot;
+                        trimmed[cs] = (double)clusterSizeDistribution[op][cs]/(double)tot;
                     }
                 }
                 writeCSV(fullFileName, trimmed);

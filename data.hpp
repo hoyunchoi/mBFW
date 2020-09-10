@@ -120,7 +120,8 @@ namespace mBFW::data{
             removeFile(readFile);
         }
         average /= fileNum;
-        const double tot = accumulate(average);
+        // const double tot = accumulate(average);
+        // average /= tot;
         return average;
     }
 
