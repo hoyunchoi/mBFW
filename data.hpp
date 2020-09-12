@@ -159,17 +159,17 @@ namespace mBFW::data{
 
         //* Log Binning
         std::map<double, double> binned;
-        std::map<double, int> sampledBin;
         for (auto it=t_raw.begin(); it!=t_raw.end(); ++it){
             for (int i=0; i<logBinNum; ++i){
                 if (min[i+1] > it->first && it->first){
                     binned[value[i]] += it->second;
-                    ++sampledBin[value[i]];
                     break;
                 }
             }
         }
-        binned /= sampledBin;
+        for (int i=0; i<logBinNum; ++i){
+            binned[value[i]] /= min[i+1]-min[i];
+        }
         return binned;
     }
 

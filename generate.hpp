@@ -65,7 +65,7 @@ namespace mBFW::generate{
     //* clusterSizeDistribution[orderParameter] : cluster size distribution at (rounded order parameter)=(orderParameter)
     //* clusterSizeDistribution[orderParameter][cs] : number of cluster of size "cs"
     std::map<double, std::vector<long long>> clusterSizeDistribution;
-    // std::map<double, long long> sampledClusterSizeDistribution;
+    std::map<double, long long> sampledClusterSizeDistribution;
     // std::map<double, std::vector<int>> sampledClusterSizeDistribution;
 
     //* interEventTimeDistribution["before"] : inter event time distribution before jump (order parameter < m_a)
@@ -125,7 +125,7 @@ namespace mBFW::generate{
         const double roundedOrderParameter = round(t_exactOrderParameter*precision)/precision;
         auto it = std::find(orderParameter_clusterSizeDistribution.begin(), orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
         if (it != orderParameter_clusterSizeDistribution.end()){
-            // ++sampledClusterSizeDistribution[*it];
+            ++sampledClusterSizeDistribution[*it];
             const std::map<int,int> sortedCluster = t_model.getSortedCluster();
             for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
                 clusterSizeDistribution[*it][it2->first] += it2->second;
@@ -515,11 +515,11 @@ namespace mBFW::generate{
 
                 //* save only useful data
                 std::map<int, double> trimmed;
-                const long long tot = std::accumulate(clusterSizeDistribution[op].begin(), clusterSizeDistribution[op].end(), 0);
-                // const double tot = std::accumulate(clusterSizeDistribution[op].begin(), clusterSizeDistribution[op].end(), 0.0);
-                for (int cs=0; cs<networkSize; ++cs){
-                    if (clusterSizeDistribution[op][cs]){
-                        trimmed[cs] = (double)clusterSizeDistribution[op][cs]/(double)tot;
+                if (sampledClusterSizeDistribution[op] != 0){
+                    for (int cs=0; cs<networkSize; +cs){
+                        if (clusterSizeDistribution[op][cs]){
+                            trimmed[cs] = clusterSizeDistribution[op][cs] / sampledClusterSizeDistribution[op];
+                        }
                     }
                 }
                 writeCSV(fullFileName, trimmed);
