@@ -177,5 +177,7 @@ bin/*
 # End of https://www.toptal.com/developers/gitignore/api/executable
 
 
-# Exclude loggin file
+# Exclude logging, temp file
 log.txt
+test.*
+Paper Graph.ipynb

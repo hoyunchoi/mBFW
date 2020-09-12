@@ -66,7 +66,6 @@ namespace mBFW::generate{
     //* clusterSizeDistribution[orderParameter][cs] : number of cluster of size "cs"
     std::map<double, std::vector<long long>> clusterSizeDistribution;
     std::map<double, long long> sampledClusterSizeDistribution;
-    // std::map<double, std::vector<int>> sampledClusterSizeDistribution;
 
     //* interEventTimeDistribution["before"] : inter event time distribution before jump (order parameter < m_a)
     //* interEventTimeDistribution["during"] : inter event time distribution during jump (m_a < order parameter < m_c)
@@ -129,7 +128,6 @@ namespace mBFW::generate{
             const std::map<int,int> sortedCluster = t_model.getSortedCluster();
             for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
                 clusterSizeDistribution[*it][it2->first] += it2->second;
-                // ++sampledClusterSizeDistribution[*it][it2->first];
             }
         }
     }
@@ -253,7 +251,6 @@ namespace mBFW::generate{
         if (process_clusterSizeDistribution){
             for (const double& m : orderParameter_clusterSizeDistribution){
                 clusterSizeDistribution[m].assign(t_networkSize, 0);
-                // sampledClusterSizeDistribution[m].assign(t_networkSize, 0);
             }
         }
         for (auto state : states){
@@ -516,9 +513,9 @@ namespace mBFW::generate{
                 //* save only useful data
                 std::map<int, double> trimmed;
                 if (sampledClusterSizeDistribution[op] != 0){
-                    for (int cs=0; cs<networkSize; +cs){
+                    for (int cs=0; cs<networkSize; ++cs){
                         if (clusterSizeDistribution[op][cs]){
-                            trimmed[cs] = clusterSizeDistribution[op][cs] / sampledClusterSizeDistribution[op];
+                            trimmed.insert(std::make_pair(cs, clusterSizeDistribution[op][cs]/sampledClusterSizeDistribution[op]));
                         }
                     }
                 }
