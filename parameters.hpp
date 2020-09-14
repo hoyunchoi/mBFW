@@ -24,9 +24,8 @@ namespace mBFW::parameters{
         else if (t_acceptanceThreshold == 0.5){
             m_c = 0.860; t_c = 0.937;
             time_orderParameterDistribution = {0.9320, 0.9370, 0.9482};
-            // orderParameter_clusterSizeDistribution = {0.0100, 0.0500, 0.1500, 0.8000, 0.8254, 0.8600};
-            // orderParameter_clusterSizeDistribution = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9};
             orderParameter_clusterSizeDistribution = {0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.8254, 0.86, 0.9};
+            // orderParameter_clusterSizeDistribution = {0.2};
         }
         else if (t_acceptanceThreshold == 0.6){
             m_c = 0.784; t_c = 0.901;

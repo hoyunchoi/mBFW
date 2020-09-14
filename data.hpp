@@ -120,8 +120,6 @@ namespace mBFW::data{
             removeFile(readFile);
         }
         average /= fileNum;
-        // const double tot = accumulate(average);
-        // average /= tot;
         return average;
     }
 
@@ -148,7 +146,7 @@ namespace mBFW::data{
         //* Test whether T is double or int
         T test = 2;
         std::vector<double> min, value;
-        if (3/test == 1.5){
+        if (1/test == 0.5){
             min = double_min;
             value = double_value;
         }
@@ -162,13 +160,10 @@ namespace mBFW::data{
         for (auto it=t_raw.begin(); it!=t_raw.end(); ++it){
             for (int i=0; i<logBinNum; ++i){
                 if (min[i+1] > it->first && it->first){
-                    binned[value[i]] += it->second;
+                    binned[value[i]] += it->second/(min[i+1]-min[i]);
                     break;
                 }
             }
-        }
-        for (int i=0; i<logBinNum; ++i){
-            binned[value[i]] /= min[i+1]-min[i];
         }
         return binned;
     }
@@ -270,7 +265,9 @@ namespace mBFW::data{
             }
             //* Log Binning
             else if (t_observable == "clusterSizeDistribution"){
-                const std::map<double, double> binned = logBin(avg);
+                std::map<double, double> binned = logBin(avg);
+                const double tot = accumulate(binned);
+                binned /= tot;
                 const std::string writeFile2 = directory + "logBin/" + filename_orderParameter(networkSize, acceptanceThreshold, totalEnsemble, checkPoint);
                 writeCSV(writeFile2, binned);
                 const std::string removeFileName2 = directory + "logBin/" + filename_orderParameter(networkSize, acceptanceThreshold, ensembleList[0], checkPoint);

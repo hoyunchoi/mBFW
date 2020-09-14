@@ -515,7 +515,7 @@ namespace mBFW::generate{
                 if (sampledClusterSizeDistribution[op] != 0){
                     for (int cs=0; cs<networkSize; ++cs){
                         if (clusterSizeDistribution[op][cs]){
-                            trimmed.insert(std::make_pair(cs, clusterSizeDistribution[op][cs]/sampledClusterSizeDistribution[op]));
+                            trimmed.insert(std::make_pair(cs, (double)clusterSizeDistribution[op][cs]/sampledClusterSizeDistribution[op]));
                         }
                     }
                 }
