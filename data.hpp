@@ -98,7 +98,7 @@ namespace mBFW::data{
         std::map<T, int> sampledAverage;
         for (int core=0; core<fileNum; ++core){
             const std::string readFile = t_directory + defaultFileName(networkSize, acceptanceThreshold, ensembleList[core], core);
-            readCSV(readFile, temp);
+            CSV::read(readFile, temp);
             average += temp;
             sampleNum(sampledAverage, temp);
             removeFile(readFile);
@@ -115,7 +115,7 @@ namespace mBFW::data{
         std::map<T, double> average, temp;
         for (int core=0; core<fileNum; ++core){
             const std::string readFile = t_directory + generalFileName(t_observable, networkSize, acceptanceThreshold, ensembleList[core], t_checkpoint, core);
-            readCSV(readFile, temp);
+            CSV::read(readFile, temp);
             average += temp;
             removeFile(readFile);
         }
@@ -175,7 +175,7 @@ namespace mBFW::data{
         std::vector<double> temp(networkSize);
         for (int core=0; core<fileNum; ++core){
             const std::string readFile = directory + defaultFileName(networkSize, acceptanceThreshold, ensembleList[core], core);
-            readCSV(readFile, temp);
+            CSV::read(readFile, temp);
             average += temp;
             removeFile(readFile);
         }
@@ -183,8 +183,8 @@ namespace mBFW::data{
 
         const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
         const std::string writeFile2 = directory + "average/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
-        writeCSV(writeFile1, average);
-        writeCSV(writeFile2, average);
+        CSV::write(writeFile1, average);
+        CSV::write(writeFile2, average);
 
         const std::string removeFileName = directory + "average/" + defaultFileName(networkSize, acceptanceThreshold, ensembleList[0]);
         removeFile(removeFileName);
@@ -198,7 +198,7 @@ namespace mBFW::data{
             }
             const std::map<double, double> binned = logBin(raw);
             const std::string writeFile3 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
-            writeCSV(writeFile3, binned);
+            CSV::write(writeFile3, binned);
             const std::string removeFileName = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleList[0]);
             removeFile(removeFileName);
         }
@@ -214,7 +214,7 @@ namespace mBFW::data{
             //* average
             const std::map<double, double> avg = average(directory + state + "/", 0.0);
             const std::string writeFile1 = directory + state + "/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
-            writeCSV(writeFile1, avg);
+            CSV::write(writeFile1, avg);
 
             //* merge
             merge += avg;
@@ -222,7 +222,7 @@ namespace mBFW::data{
         }
         merge /= sampledMerge;
         const std::string writeFile3 = directory + "merge/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
-        writeCSV(writeFile3, merge);
+        CSV::write(writeFile3, merge);
         const std::string removeFileName1 = directory + "merge/" + defaultFileName(networkSize, acceptanceThreshold, ensembleList[0]);
         removeFile(removeFileName1);
 
@@ -230,7 +230,7 @@ namespace mBFW::data{
         merge = minus_first(t_c, merge);
         const std::map<double, double> binned = logBin(merge);
         const std::string writeFile2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
-        writeCSV(writeFile2, binned);
+        CSV::write(writeFile2, binned);
         const std::string removeFileName2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleList[0]);
         removeFile(removeFileName2);
     }
@@ -253,13 +253,13 @@ namespace mBFW::data{
             //* average
             const std::map<T, double> avg = averageDistribution(t_observable, directory, t_check, checkPoint);
             const std::string writeFile1 = directory + generalFileName(t_observable, networkSize, acceptanceThreshold, totalEnsemble, checkPoint, 0);
-            writeCSV(writeFile1, avg);
+            CSV::write(writeFile1, avg);
 
             //* Linear Binning
             if (t_observable == "orderParameterDistribution"){
                 const std::map<double, double> binned = linearBin(avg);
                 const std::string writeFile2 = directory + "linearBin/" + filename_time(networkSize, acceptanceThreshold, totalEnsemble, checkPoint);
-                writeCSV(writeFile2, avg);
+                CSV::write(writeFile2, avg);
                 const std::string removeFileName2 = directory + "linearBin/" + filename_time(networkSize, acceptanceThreshold, ensembleList[0], checkPoint);
                 removeFile(removeFileName2);
             }
@@ -269,7 +269,7 @@ namespace mBFW::data{
                 const double tot = accumulate(binned);
                 binned /= tot;
                 const std::string writeFile2 = directory + "logBin/" + filename_orderParameter(networkSize, acceptanceThreshold, totalEnsemble, checkPoint);
-                writeCSV(writeFile2, binned);
+                CSV::write(writeFile2, binned);
                 const std::string removeFileName2 = directory + "logBin/" + filename_orderParameter(networkSize, acceptanceThreshold, ensembleList[0], checkPoint);
                 removeFile(removeFileName2);
             }
@@ -286,14 +286,14 @@ namespace mBFW::data{
             //* average
             const std::map<T, double> avg = averageDistribution(t_observable, directory, t_check, 0.0);
             const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
-            writeCSV(writeFile1, avg);
+            CSV::write(writeFile1, avg);
 
             //* Log binning
             std::map<double, double> binned = logBin(avg);
             const double tot = accumulate(binned);
             binned /= tot;
             const std::string writeFile2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
-            writeCSV(writeFile2, binned);
+            CSV::write(writeFile2, binned);
             const std::string removeFileName = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleList[0]);
             removeFile(removeFileName);
         }
@@ -308,12 +308,12 @@ namespace mBFW::data{
         //* average
         const std::map<T, double> avg = average(directory, t_check);
         const std::string writeFile1 = directory + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble, 0);
-        writeCSV(writeFile1, avg);
+        CSV::write(writeFile1, avg);
 
         //* Log Binning
         const std::map<double, double> binned = logBin(avg);
         const std::string writeFile2 = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, totalEnsemble);
-        writeCSV(writeFile2, binned);
+        CSV::write(writeFile2, binned);
         const std::string removeFileName = directory + "logBin/" + defaultFileName(networkSize, acceptanceThreshold, ensembleList[0]);
         removeFile(removeFileName);
     }
