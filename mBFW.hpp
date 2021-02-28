@@ -4,7 +4,7 @@
 #include <vector>
 #include <set>
 
-#include "../library-Git/stringFormat.hpp"
+#include "../library/stringFormat.hpp"
 
 namespace mBFW{
     //! Declaration of global variables defined at mBFW namespace

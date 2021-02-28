@@ -7,12 +7,13 @@
 #include <algorithm>
 #include <functional>
 
-#include "../library-Git/linearAlgebra.hpp"
-#include "../library-Git/Networks.hpp"
-#include "../library-Git/CSV.hpp"
-#include "../library-Git/pcg_random.hpp"
+#include "../library/linearAlgebra.hpp"
+#include "../library/Networks.hpp"
+#include "../library/CSV.hpp"
+#include "../library/pcg_random.hpp"
 
 #include "parameters.hpp"
+#include "NZ_Network.hpp"
 #include "mBFW.hpp"
 
 namespace mBFW::generate{
@@ -301,7 +302,7 @@ namespace mBFW::generate{
         for (int ensemble=0; ensemble<ensembleSize; ++ensemble){
             //* Default values for one ensemble
             NZ_Network model(networkSize);
-            Node node1, node2, root1, root2;
+            int node1, node2, root1, root2;
             int size1, size2;
             int time = 0;
             int trialTime = 0;
@@ -439,21 +440,21 @@ namespace mBFW::generate{
         if (process_orderParameter){
             const std::string fullFileName = rootDirectory + "orderParameter/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
             orderParameter /= ensembleSize;
-            writeCSV(fullFileName, orderParameter);
+            CSV::write(fullFileName, orderParameter);
         }
 
         //! Mean Cluster Size
         if (process_meanClusterSize){
             const std::string fullFileName = rootDirectory + "meanClusterSize/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
             meanClusterSize /= ensembleSize;
-            writeCSV(fullFileName, meanClusterSize);
+            CSV::write(fullFileName, meanClusterSize);
         }
 
         //! Second Giant
         if (process_secondGiant){
             const std::string fullFileName = rootDirectory + "secondGiant/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
             secondGiant /= ensembleSize;
-            writeCSV(fullFileName, secondGiant);
+            CSV::write(fullFileName, secondGiant);
         }
 
         //! Inter Event Time
@@ -468,7 +469,7 @@ namespace mBFW::generate{
                         trimmed[(double)t/networkSize] = interEventTime[state][t]/sampledInterEventTime[state][t];
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -484,7 +485,7 @@ namespace mBFW::generate{
                         trimmed[(double)t/networkSize] = deltaAcceptance[state][t]/sampledDeltaAcceptance[state][t];
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -501,7 +502,7 @@ namespace mBFW::generate{
                         trimmed[(double)mcs/networkSize] = orderParameterDistribution[t][mcs]/tot;
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -519,7 +520,7 @@ namespace mBFW::generate{
                         }
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -536,7 +537,7 @@ namespace mBFW::generate{
                         trimmed[age] = ageDistribution[state][age]/tot;
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -553,7 +554,7 @@ namespace mBFW::generate{
                         trimmed[iet] = interEventTimeDistribution[state][iet]/tot;
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -570,7 +571,7 @@ namespace mBFW::generate{
                         trimmed[deltaK] = deltaUpperBoundDistribution[state][deltaK]/tot;
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -587,7 +588,7 @@ namespace mBFW::generate{
                         trimmed[valueBin[i]] = (double)deltaAcceptanceDistribution[state][i]/tot;
                     }
                 }
-                writeCSV(fullFileName, trimmed);
+                CSV::write(fullFileName, trimmed);
             }
         }
 
@@ -602,7 +603,7 @@ namespace mBFW::generate{
                     trimmed[iet] = interEventTime_DeltaAcceptance[iet]/sampledInterEventTime_DeltaAcceptance[iet];
                 }
             }
-            writeCSV(fullFileName, trimmed);
+            CSV::write(fullFileName, trimmed);
         }
 
         //! Upper Bound vs Delta Acceptance
@@ -616,7 +617,7 @@ namespace mBFW::generate{
                     trimmed[k] = upperBound_DeltaAcceptance[k]/sampledUpperBound_DeltaAcceptance[k];
                 }
             }
-            writeCSV(fullFileName, trimmed);
+            CSV::write(fullFileName, trimmed);
         }
 
         //! Delta Upper Bound vs Delta Acceptance
@@ -630,14 +631,14 @@ namespace mBFW::generate{
                     trimmed[deltaK] = deltaUpperBound_DeltaAcceptance[deltaK]/sampledDeltaUpperBound_DeltaAcceptance[deltaK];
                 }
             }
-            writeCSV(fullFileName, trimmed);
+            CSV::write(fullFileName, trimmed);
         }
 
         //! Dynamics
         if (process_dynamics){
             for (auto state : states){
                 const std::string fullFileName = rootDirectory + "dynamics/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, -1, randomEngineSeed);
-                writeCSV(fullFileName, dynamics[state]);
+                CSV::write(fullFileName, dynamics[state]);
 
             }
         }

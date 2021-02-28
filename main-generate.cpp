@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
     //* warning for random engine seed
     if (randomEngineSeed != -1){
         int warning = 0;
-        for (int i=0; i<observables.size()-1; ++i){
+        for (unsigned i=0; i<observables.size()-1; ++i){
             warning += observables[i];
         }
         if (warning){
