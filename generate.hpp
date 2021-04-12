@@ -109,9 +109,9 @@ const std::string Generate::m_getState(const int& t_maximumClusterSize) const {
     } else if (t_maximumClusterSize < m_points.at("m_a2")){
         return "A1A2";
     } else if (t_maximumClusterSize < m_points.at("m_b")) {
-        return "A2G";
+        return "A2B";
     } else if (t_maximumClusterSize < m_points.at("m_c")) {
-        return "GC";
+        return "BC";
     } else {
         return "C1";
     }
@@ -123,9 +123,9 @@ const std::string Generate::m_getState_time(const int& t_time) const {
     } else if (t_time < m_points.at("t_a2")){
         return "A1A2";
     } else if (t_time < m_points.at("t_b")) {
-        return "A2G";
+        return "A2B";
     } else if (t_time < m_points.at("t_c")) {
-        return "GC";
+        return "BC";
     } else {
         return "C1";
     }

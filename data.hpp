@@ -11,6 +11,8 @@
 #include "../library/linearAlgebra.hpp"
 #include "common.hpp"
 
+
+//? Need to rename cluster size distribution files and do op=1e-6 scale observation
 namespace mBFW {
 struct Data {
    protected:
@@ -249,7 +251,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     //* Average for each repeater value
     std::map<int, std::map<int, double>> averageMap;
     for (const std::string& fileName : fileNameList) {
-        for (const std::vector<double> data : totalData.at(fileName)) {
+        for (const std::vector<double>& data : totalData.at(fileName)) {
             const int repeater = (int)data[0];
             const double ratio = data[1] / (double)totalEnsembleMap[repeater];
             for (unsigned i = 2; i < data.size(); i += 2) {
