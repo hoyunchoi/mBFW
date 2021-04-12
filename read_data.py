@@ -139,7 +139,7 @@ def getSubState(state):
     return states[index[0]: index[1] + 1]
 
 
-def find_inflection_ta(networkSize, orderParameter, delta=1e-4):
+def get_ta_inflection(networkSize, orderParameter, delta=1e-4):
     time = np.arange(0.0, 1.0, 1 / networkSize)
     bin_t, bin_op = avgLinBin(time, orderParameter, delta=delta)
     inclination = (bin_op[1:] - bin_op[:-1]) / delta
