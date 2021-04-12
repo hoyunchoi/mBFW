@@ -5,6 +5,10 @@
 #include "data.hpp"
 
 int main(int argc, char* argv[]) {
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(NULL);
+    std::cout.tie(NULL);
+
     const int networkSize = std::stoi(argv[1]);
     const double acceptanceThreshold = std::stod(argv[2]);
     const bool deletion = true;

@@ -57,26 +57,6 @@ void Parameter::m_set_points() {
                 m_points[type] = std::stod(line.substr(line.find(": ") + 2));
             }
         }
-
-
-        // //* Find line for each points
-        // if (line.find("t_a") != line.npos) {
-        //     m_points["t_a"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("m_a") != line.npos) {
-        //     m_points["m_a"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("inf_ta") != line.npos){
-        //     m_points["t_a2"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("inf_ma") != line.npos){
-        //     m_points["m_a2"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("t_g") != line.npos) {
-        //     m_points["t_b"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("m_g") != line.npos) {
-        //     m_points["m_b"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("t_c_csd") != line.npos) {
-        //     m_points["t_c"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("m_c_csd") != line.npos) {
-        //     m_points["m_c"] = std::stod(line.substr(line.find(": ") + 2));
-        // }
     }
 
     //* Check if every points are set
