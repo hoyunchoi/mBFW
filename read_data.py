@@ -9,7 +9,6 @@ from dataProcess import *
 dataDirectory = "../data/mBFW/"
 states = ["0A1", "A1A2", "A2G", "GC", "C1"]
 point_type = ["t_a1", "m_a1", "t_a2", "m_a2", "t_b", "m_b", "t_c", "m_c", "t_inflection", "m_inflection"]
-
 observables = set()
 observables.add("points")
 
