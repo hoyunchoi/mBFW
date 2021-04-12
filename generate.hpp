@@ -104,7 +104,7 @@ Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold
 }
 
 const std::string Generate::m_getState(const int& t_maximumClusterSize) const {
-    if (t_maximumClusterSize < m_points.at("m_a")) {
+    if (t_maximumClusterSize < m_points.at("m_a1")) {
         return "0A1";
     } else if (t_maximumClusterSize < m_points.at("m_a2")){
         return "A1A2";
@@ -118,7 +118,7 @@ const std::string Generate::m_getState(const int& t_maximumClusterSize) const {
 }
 
 const std::string Generate::m_getState_time(const int& t_time) const {
-    if (t_time < m_points.at("t_a")) {
+    if (t_time < m_points.at("t_a1")) {
         return "0A1";
     } else if (t_time < m_points.at("t_a2")){
         return "A1A2";
