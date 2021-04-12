@@ -1,646 +1,415 @@
 #pragma once
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <map>
 #include <algorithm>
-#include <functional>
+#include <cmath>
+#include <map>
+#include <random>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "../library/linearAlgebra.hpp"
-#include "../library/Networks.hpp"
 #include "../library/CSV.hpp"
+#include "../library/linearAlgebra.hpp"
 #include "../library/pcg_random.hpp"
-
-#include "parameters.hpp"
 #include "NZ_Network.hpp"
-#include "mBFW.hpp"
+#include "common.hpp"
+#include "parameters.hpp"
 
-namespace mBFW::generate{
-    //*--------------------------------------------Declaration of variables---------------------------------------------------------
-    //! Declaration of variables only used at mBFW::generate namespace
-    int randomEngineSeed;
-    double precision;
-    double degenerated;
+/*
+    Observables
+    obs_orderParameter[t] : Order parameter at time t
+    obs_secondMoment[t] : Second moment (op^2) at time t
+    obs_meanClusterSize[t] : Mean cluster size (of finite clusters) at time t
+    obs_interEventTime[t] : Inter event time finished at time t, sample number
 
-    //* variables for log binning
-    int logBinNum;
-    std::vector<double> minBin;
-    std::vector<double> valueBin;
+    obs_ageDist["state"][age] : Number of age accumulated at interval "state"
+    obs_interEventTimeDist["state"][iet] : Number of inter event time accumulated through interval "state"
+    obs_deltaUpperBoundDist["state"][dk] : Number of delta upper bound accumulated through interval "state"
+    obs_clusterSizeDist[op][cs] : Number of clusters with size cs when order parameter exceeds op
+    obs_orderParameterDist[t][op] : Number of ensembles with order parameter op at time t
 
-    //! Random Engine
-    pcg32 randomEngine;
-    std::uniform_int_distribution<int> nodeDistribution;
+    obs_interEventTime_orderParameter[iet] : Order parameter when inter event time is iet, sample number
+*/
 
-    //! calculation functions
-    std::function<void(const int&, const double&)> do_orderParameter;
-    std::function<void(const int&, const double&)> do_meanClusterSize;
-    std::function<void(const int&, const double&)> do_secondGiant;
-    std::function<void(const std::string&, const int&, const int&)> do_interEventTime;
-    std::function<void(const std::string&, const int&, const double&)> do_deltaAcceptance;
-    std::function<void(const int&, const int&)> do_orderParameterDistribution;
-    std::function<void(const double&, NZ_Network&)> do_clusterSizeDistribution;
-    std::function<void(const double&, const NZ_Network&)> do_ageDistribution;
-    std::function<void(const std::string&, const int&)> do_interEventTimeDistribution;
-    std::function<void(const std::string&, const int&)> do_deltaUpperBoundDistribution;
-    std::function<void(const std::string&, const double&)> do_deltaAcceptanceDistribution;
-    std::function<void(const int&, const double&)> do_interEventTime_DeltaAcceptance;
-    std::function<void(const int&, const double&)> do_upperBound_DeltaAcceptance;
-    std::function<void(const int&, const double&)> do_deltaUpperBound_DeltaAcceptance;
-    std::function<void(const double&, const int&, const int&, const int&, const int&, const int&, const int&)> do_dynamics;
+namespace mBFW {
+struct Generate {
+   protected:
+    //* Member variables
+    int m_networkSize;
+    double m_acceptanceThreshold;
+    unsigned m_ensembleSize;
+    int m_coreNum;
+    pcg32 m_randomEngine;
+    std::uniform_int_distribution<int> m_nodeDistribution;
+    std::map<std::string, int> m_points;
+    std::set<int> m_clusterSizeDist_orderParameter;
+    std::set<int> m_orderParameterDist_time;
 
-    //! Declaration of observables
-    //* X[time] = value of observable X at time
-    std::vector<double> orderParameter;
-    std::vector<double> secondGiant;
-    std::vector<double> meanClusterSize;
-    std::map<std::string, std::vector<double>> interEventTime;
-    std::map<std::string, std::vector<int>> sampledInterEventTime;
-    std::map<std::string, std::vector<double>> deltaAcceptance;
-    std::map<std::string, std::vector<int>> sampledDeltaAcceptance;
+    //* Observables
+    std::vector<double> obs_orderParameter;
+    std::vector<double> obs_secondMoment;
+    std::vector<double> obs_meanClusterSize;
+    std::vector<std::pair<unsigned, unsigned>> obs_interEventTime;
+    std::map<std::string, std::vector<unsigned long long>> obs_ageDist;
+    std::map<std::string, std::vector<unsigned>> obs_interEventTimeDist;
+    std::map<std::string, std::vector<unsigned>> obs_deltaUpperBoundDist;
+    std::map<int, std::map<int, unsigned long long>> obs_clusterSizeDist;
+    std::map<int, std::map<int, unsigned>> obs_orderParameterDist;
+    std::vector<std::pair<double, unsigned>> obs_interEventTime_orderParameter;
 
-    //* orderParameterDistribution[time] : distribution of rounded order parameter at (rounded time)=(time)
-    //* orderParameterDistribution[time][mcs] : number of cluster size of "maximum cluster size"
-    std::map<double, std::vector<int>> orderParameterDistribution;
+   public:
+    Generate() {}
+    Generate(const int&, const double&, const int&, const int&);
 
-    //* clusterSizeDistribution[orderParameter] : cluster size distribution at (rounded order parameter)=(orderParameter)
-    //* clusterSizeDistribution[orderParameter][cs] : number of cluster of size "cs"
-    std::map<double, std::vector<long long>> clusterSizeDistribution;
-    std::map<double, long long> sampledClusterSizeDistribution;
+    //* Member functions
+    void run(const unsigned&);
+    void save() const;
 
-    //* interEventTimeDistribution["before"] : inter event time distribution before jump (order parameter < m_a)
-    //* interEventTimeDistribution["during"] : inter event time distribution during jump (m_a < order parameter < m_c)
-    std::map<std::string, std::vector<int>> interEventTimeDistribution;
+   protected:
+    const std::string m_getState(const int&) const;
+    const std::string m_getState_time(const int&) const;
+    void m_singleRun();
+};
 
-    //* detaMDistribution["before"] : jump size of maximum cluster size distribution before jump
-    //* detaMDistribution["during"] : jump size of maximum cluster size distribution during jump
-    std::map<std::string, std::vector<int>> deltaUpperBoundDistribution;
+Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold, const int& t_coreNum, const int& t_randomEngineSeed = -1) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold), m_coreNum(t_coreNum) {
+    //* Get default values from parameter
+    mBFW::Parameter parameter(t_networkSize, t_acceptanceThreshold);
+    m_points = parameter.get_points();
+    m_clusterSizeDist_orderParameter = parameter.get_clusterSizeDist_orderParameter();
+    m_orderParameterDist_time = parameter.get_orderParameterDist_time();
 
-    //* ageDistribution["before"] : age distribution before jump (order parameter < m_a)
-    //* ageDistribution["during"] : age distribution during jump (m_a < order parameter < m_c)
-    std::map<std::string, std::vector<long long>> ageDistribution;
+    //* Initialize random variables
+    t_randomEngineSeed == -1 ? m_randomEngine.seed((std::random_device())()) : m_randomEngine.seed(t_randomEngineSeed);
+    m_nodeDistribution.param(std::uniform_int_distribution<int>::param_type(0, t_networkSize - 1));
 
-    //* deltaAcceptanceDistribution["before"] : max acceptance distribution befeore jump (order paramter < m_a)
-    //* deltaAcceptanceDistribution["during"] : max acceptance distribution during jump (m_a < order paramter < m_c)
-    std::map<std::string, std::vector<int>> deltaAcceptanceDistribution;
+    //* Initialize observables
+    obs_orderParameter.assign(t_networkSize, 0.0);
+    obs_meanClusterSize.assign(t_networkSize, 0.0);
+    obs_secondMoment.assign(t_networkSize, 0.0);
+    obs_interEventTime.assign(t_networkSize, std::pair<unsigned, unsigned>{0, 0});
 
-    //* X_maxAcceptance[x] : average max acceptance at X=x before jump
-    //* sampledX_maxAcceptance[x] : number of samples for each X=x
-    std::vector<double> interEventTime_DeltaAcceptance;
-    std::vector<int> sampledInterEventTime_DeltaAcceptance;
-    std::vector<double> upperBound_DeltaAcceptance;
-    std::vector<int> sampledUpperBound_DeltaAcceptance;
-    std::vector<double> deltaUpperBound_DeltaAcceptance;
-    std::vector<int> sampledDeltaUpperBound_DeltaAcceptance;
-
-    //* Dynamics
-    std::map<std::string, std::vector<std::vector<int>>> dynamics;
-
-    //*------------------------------------------- functions for calculating observables ------------------------------------------------------
-    void calculate_orderParameter(const int& t_time, const double& t_exactOrderParameter){
-        orderParameter[t_time] += t_exactOrderParameter;
+    for (const std::string& state : mBFW::states) {
+        obs_ageDist[state].assign(t_networkSize, 0);
+        obs_interEventTimeDist[state].assign(t_networkSize, 0);
+        obs_deltaUpperBoundDist[state].assign(t_networkSize, 0);
     }
-    void calculate_meanClusterSize(const int& t_time, const double& t_meanClusterSize){
-        meanClusterSize[t_time] += t_meanClusterSize;
+    for (const double& op : m_clusterSizeDist_orderParameter) {
+        obs_clusterSizeDist[op] = std::map<int, unsigned long long>{};
     }
-    void calculate_secondGiant(const int& t_time, const double& t_secondMaximumCluster){
-        secondGiant[t_time] += t_secondMaximumCluster;
+    for (const int& t : m_orderParameterDist_time) {
+        obs_orderParameterDist[t] = std::map<int, unsigned>{};
     }
-    void calculate_interEventTime(const std::string& t_currentState, const int& t_time, const int& t_currentInterEventTime){
-        interEventTime[t_currentState][t_time] += t_currentInterEventTime;
-        ++sampledInterEventTime[t_currentState][t_time];
+
+    obs_interEventTime_orderParameter.assign(t_networkSize, std::pair<double, unsigned>{0.0, 0});
+}
+
+const std::string Generate::m_getState(const int& t_maximumClusterSize) const {
+    if (t_maximumClusterSize < m_points.at("m_a")) {
+        return "0A1";
+    } else if (t_maximumClusterSize < m_points.at("m_a2")){
+        return "A1A2";
+    } else if (t_maximumClusterSize < m_points.at("m_b")) {
+        return "A2G";
+    } else if (t_maximumClusterSize < m_points.at("m_c")) {
+        return "GC";
+    } else {
+        return "C1";
     }
-    void calculate_deltaAcceptance(const std::string& t_currentState, const int& t_time, const double& t_currentDeltaAcceptance){
-        deltaAcceptance[t_currentState][t_time] += t_currentDeltaAcceptance;
-        ++sampledDeltaAcceptance[t_currentState][t_time];
+}
+
+const std::string Generate::m_getState_time(const int& t_time) const {
+    if (t_time < m_points.at("t_a")) {
+        return "0A1";
+    } else if (t_time < m_points.at("t_a2")){
+        return "A1A2";
+    } else if (t_time < m_points.at("t_b")) {
+        return "A2G";
+    } else if (t_time < m_points.at("t_c")) {
+        return "GC";
+    } else {
+        return "C1";
     }
-    void calculate_orderParameterDistribution(const int& t_time, const int& t_maximumClusterSize){
-        const double roundedTime = round(t_time/degenerated)/precision;
-        auto it = std::find(time_orderParameterDistribution.begin(), time_orderParameterDistribution.end(), roundedTime);
-        if (it != time_orderParameterDistribution.end()){
-            ++orderParameterDistribution[*it][t_maximumClusterSize];
+}
+
+void Generate::m_singleRun() {
+    //* Initialize for single ensemble
+    NZ_Network network(m_networkSize);
+    int time = 0;
+    int trialTime = 0;
+    int eventTime = 0;
+    int upperBound = 2;
+    bool findNewLink = true;
+    int root1, root2, newSize;
+    std::string state = "0A1";
+    std::string state_time = "0A1";
+    std::set<int> findingClusterSizeDist = m_clusterSizeDist_orderParameter;
+    std::set<int> newFindingClusterSizeDist = m_clusterSizeDist_orderParameter;
+    std::set<int> findingOrderParameterDist = m_orderParameterDist_time;
+
+    //* Observables at time=0 state
+    obs_orderParameter[time] += 1.0 / m_networkSize;
+    obs_secondMoment[time] += std::pow(1.0 / m_networkSize, 2.0);
+    obs_meanClusterSize[time] += 1.0;
+
+    //* Do m-BFW algorithm until all clusters are merged to one
+    while (time < m_networkSize - 1) {
+        //* Find new link to add
+        if (findNewLink) {
+            do {
+                root1 = network.getRoot(m_nodeDistribution(m_randomEngine));
+                root2 = network.getRoot(m_nodeDistribution(m_randomEngine));
+            } while (root1 == root2);
+            newSize = network.getSize(root1) + network.getSize(root2);
         }
-    }
-    void calculate_clusterSizeDistribution(const double& t_exactOrderParameter, NZ_Network& t_model){
-        const double roundedOrderParameter = round(t_exactOrderParameter*precision)/precision;
-        auto it = std::find(orderParameter_clusterSizeDistribution.begin(), orderParameter_clusterSizeDistribution.end(), roundedOrderParameter);
-        if (it != orderParameter_clusterSizeDistribution.end()){
-            ++sampledClusterSizeDistribution[*it];
-            const std::map<int,int> sortedCluster = t_model.getSortedCluster();
-            for (auto it2 = sortedCluster.begin(); it2!= sortedCluster.end(); ++it2){
-                clusterSizeDistribution[*it][it2->first] += it2->second;
+
+        //* Chosen link is accepted: time, trial time increased
+        if (newSize <= upperBound) {
+            network.merge(root1, root2);
+            ++time;
+            ++trialTime;
+            findNewLink = true;
+            state_time = m_getState_time(time);
+
+            //* Get basic data from network
+            const int maximumClusterSize = network.maximumClusterSize;
+            const double orderParameter = (double)maximumClusterSize / m_networkSize;
+            const int deltaMaximumClusterSize = network.deltaMaximumClusterSize;
+
+            //! Order Parameter
+            {
+                obs_orderParameter[time] += orderParameter;
             }
-        }
-    }
-    void calculate_ageDistribution(const double& t_exactOrderParameter, const NZ_Network& t_model){
-        if (t_exactOrderParameter < m_c){
-            const std::vector<std::pair<int,int>> changedAge = t_model.getChangedAge();
-            std::string currentState;
-            t_exactOrderParameter < m_a ? currentState = "before" : currentState = "during";
-            for (const auto& age : changedAge){
-                ageDistribution[currentState][age.first] += age.second;
+            //! Second Moment
+            {
+                obs_secondMoment[time] += std::pow(orderParameter, 2.0);
             }
-        }
-    }
-    void calculate_interEventTimeDistribution(const std::string& t_currentState, const int& t_currentInterEventTime){
-        ++interEventTimeDistribution[t_currentState][t_currentInterEventTime];
-    }
-    void calculate_deltaUpperBoundDistribution(const std::string& t_currentState, const int& t_deltaMaximumClusterSize){
-        ++deltaUpperBoundDistribution[t_currentState][t_deltaMaximumClusterSize];
-    }
-    void calculate_deltaAcceptanceDistribution(const std::string& t_currentState, const double& t_currentDeltaAcceptance){
-        for (int i=0; i<logBinNum; ++i){
-            if (minBin[i+1] > t_currentDeltaAcceptance && t_currentDeltaAcceptance){
-                ++deltaAcceptanceDistribution[t_currentState][i];
-                break;
+
+            //! Mean Cluster Size
+            {
+                obs_meanClusterSize[time] += network.getMeanClusterSize();
             }
-        }
-    }
-    void calculate_interEventTime_DeltaAcceptance(const int& t_currentInterEventTime, const double& t_currentDeltaAcceptance){
-        interEventTime_DeltaAcceptance[t_currentInterEventTime] += t_currentDeltaAcceptance;
-        ++sampledInterEventTime_DeltaAcceptance[t_currentInterEventTime];
-    }
-    void calculate_upperBound_DeltaAcceptance(const int& t_upperBound, const double& t_currentDeltaAcceptance){
-        upperBound_DeltaAcceptance[t_upperBound] += t_currentDeltaAcceptance;
-        ++sampledUpperBound_DeltaAcceptance[t_upperBound];}
-    void calculate_deltaUpperBound_DeltaAcceptance(const int& t_deltaMaximumClusterSize, const double& t_currentDeltaAcceptance){
-        deltaUpperBound_DeltaAcceptance[t_deltaMaximumClusterSize] += t_currentDeltaAcceptance;
-        ++sampledDeltaUpperBound_DeltaAcceptance[t_deltaMaximumClusterSize];
-    }
-    void calculate_dynamics(const double& t_exactOrderParameter, const int& t_time, const int& t_trialTime, const int& t_periodTime, const int& t_periodTrialTime, const int& t_maximumClusterSize, const int& t_upperBound){
-        if (t_exactOrderParameter < m_c){
-            std::string currentState;
-            t_exactOrderParameter < m_a ? currentState = "before" : currentState = "during";
-             dynamics[currentState].emplace_back(std::vector<int>{t_time, t_trialTime, t_periodTime, t_periodTrialTime, t_maximumClusterSize, t_upperBound});
-        }
-    }
 
-    //*-------------------------------------------Set Parameters for one run------------------------------------------------------
-    void setParameters(const int& t_networkSize, const int& t_ensembleSize, const double& t_acceptanceThreshold, const double t_precision, const int& t_coreNum, const int& t_randomEngineSeed, const std::vector<bool> t_observables){
-        //! Observables to be processed
-        process_orderParameter = t_observables[0];
-        process_meanClusterSize = t_observables[1];
-        process_secondGiant = t_observables[2];
-        process_interEventTime = t_observables[3];
-        process_deltaAcceptance = t_observables[4];
-        process_orderParameterDistribution = t_observables[5];
-        process_clusterSizeDistribution = t_observables[6];
-        process_ageDistribution = t_observables[7];
-        process_interEventTimeDistribution = t_observables[8];
-        process_deltaUpperBoundDistribution = t_observables[9];
-        process_deltaAcceptanceDistribution = t_observables[10];
-        process_interEventTime_DeltaAcceptance = t_observables[11];
-        process_upperBound_DeltaAcceptance = t_observables[12];
-        process_deltaUpperBound_DeltaAcceptance = t_observables[13];
-        process_dynamics = t_observables[14];
-
-        //! Input variables
-        networkSize = t_networkSize;
-        ensembleSize = t_ensembleSize;
-        coreNum = t_coreNum;
-        acceptanceThreshold = t_acceptanceThreshold;
-        randomEngineSeed = t_randomEngineSeed;
-        t_networkSize < t_precision ? precision = t_networkSize : precision = t_precision;
-
-        //! Random Engine
-        randomEngineSeed == -1 ? randomEngine.seed((std::random_device())()) : randomEngine.seed(randomEngineSeed);
-        nodeDistribution.param(std::uniform_int_distribution<int>::param_type(0, networkSize-1));
-
-        //! calculation function
-        process_orderParameter ? do_orderParameter = calculate_orderParameter : do_orderParameter = [](const int&, const double&){};
-        process_meanClusterSize ? do_meanClusterSize = calculate_meanClusterSize : do_meanClusterSize = [](const int&, const double&){};
-        process_secondGiant ? do_secondGiant = calculate_secondGiant : do_secondGiant = [](const int&, const double&){};
-        process_interEventTime ? do_interEventTime = calculate_interEventTime : do_interEventTime = [](const std::string&, const int&, const int&){};
-        process_deltaAcceptance ? do_deltaAcceptance = calculate_deltaAcceptance : do_deltaAcceptance = [](const std::string&, const int&, const double&){};
-        process_orderParameterDistribution ? do_orderParameterDistribution = calculate_orderParameterDistribution : do_orderParameterDistribution = [](const int&, const int&){};
-        process_clusterSizeDistribution ? do_clusterSizeDistribution = calculate_clusterSizeDistribution : do_clusterSizeDistribution = [](const double&, NZ_Network&){};
-        process_ageDistribution ? do_ageDistribution = calculate_ageDistribution : do_ageDistribution = [](const double&, const NZ_Network&){};
-        process_interEventTimeDistribution ? do_interEventTimeDistribution = calculate_interEventTimeDistribution : do_interEventTimeDistribution = [](const std::string&, const int&){};
-        process_deltaUpperBoundDistribution ? do_deltaUpperBoundDistribution = calculate_deltaUpperBoundDistribution : do_deltaUpperBoundDistribution = [](const std::string&, const int&){};
-        process_deltaAcceptanceDistribution ? do_deltaAcceptanceDistribution = calculate_deltaAcceptanceDistribution : do_deltaAcceptanceDistribution = [](const std::string&, const double&){};
-        process_interEventTime_DeltaAcceptance ? do_interEventTime_DeltaAcceptance = calculate_interEventTime_DeltaAcceptance : do_interEventTime_DeltaAcceptance = [](const int&, const double&){};
-        process_upperBound_DeltaAcceptance ? do_upperBound_DeltaAcceptance = calculate_upperBound_DeltaAcceptance : do_upperBound_DeltaAcceptance = [](const int&, const double&){};
-        process_deltaUpperBound_DeltaAcceptance ? do_deltaUpperBound_DeltaAcceptance = calculate_deltaUpperBound_DeltaAcceptance : do_deltaUpperBound_DeltaAcceptance = [](const int&, const double&){};
-        process_dynamics ? do_dynamics = calculate_dynamics : do_dynamics = [](const double&, const int&, const int&, const int&, const int&, const int&, const int&){};
-
-        //! Pre-defined variables
-        std::tie(m_c, t_c, time_orderParameterDistribution, orderParameter_clusterSizeDistribution) = mBFW::parameters::pre_defined(networkSize, acceptanceThreshold);
-        degenerated=t_networkSize/t_precision;
-
-        //! Output variables (Observables)
-        //* time-X
-        if (process_orderParameter){orderParameter.assign(t_networkSize, 0.0);}
-        if (process_meanClusterSize){meanClusterSize.assign(t_networkSize, 0.0);}
-        if (process_secondGiant){secondGiant.assign(t_networkSize, 0.0);}
-        for (auto state : states){
-            if (process_interEventTime){
-                interEventTime[state].assign(t_networkSize, 0.0);
-                sampledInterEventTime[state].assign(t_networkSize, 0);
-            }
-            if (process_deltaAcceptance){
-                deltaAcceptance[state].assign(t_networkSize, 0.0);
-                sampledDeltaAcceptance[state].assign(t_networkSize, 0);
-            }
-        }
-
-        //* Distributions
-        if (process_orderParameterDistribution){
-            for (const double& t : time_orderParameterDistribution){
-                orderParameterDistribution[t].assign(t_networkSize, 0);
-            }
-        }
-        if (process_clusterSizeDistribution){
-            for (const double& m : orderParameter_clusterSizeDistribution){
-                clusterSizeDistribution[m].assign(t_networkSize, 0);
-            }
-        }
-        for (auto state : states){
-            if (process_interEventTimeDistribution){interEventTimeDistribution[state].assign(t_networkSize, 0);}
-            if (process_deltaUpperBoundDistribution){deltaUpperBoundDistribution[state].assign(t_networkSize, 0);}
-            if (process_ageDistribution){ageDistribution[state].assign(t_networkSize, 0);}
-            if (process_deltaAcceptanceDistribution){
-                const std::vector<double> exponent = linearAlgebra::arange(-8.0, 0.0, 0.01);
-                minBin = linearAlgebra::elementPow(10.0, exponent);
-                logBinNum = exponent.size()-1;
-                valueBin.assign(logBinNum, 0.0);
-                for (int i=0; i<logBinNum; ++i){
-                    valueBin[i] = sqrt(minBin[i] * minBin[i+1]);
+            //! Age Distribution
+            {
+                for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
+                    obs_ageDist.at(state)[changedAge.first] += changedAge.second;
                 }
-                deltaAcceptanceDistribution[state].assign(logBinNum, 0);
             }
-        }
 
-        //* X-DeltaAcceptance
-        if (process_interEventTime_DeltaAcceptance){
-            interEventTime_DeltaAcceptance.assign(t_networkSize, 0.0);
-            sampledInterEventTime_DeltaAcceptance.assign(t_networkSize, 0);
-        }
-        if (process_upperBound_DeltaAcceptance){
-            upperBound_DeltaAcceptance.assign(t_networkSize, 0.0);
-            sampledUpperBound_DeltaAcceptance.assign(t_networkSize, 0);
-        }
-        if (process_deltaUpperBound_DeltaAcceptance){
-            deltaUpperBound_DeltaAcceptance.assign(t_networkSize, 0.0);
-            sampledDeltaUpperBound_DeltaAcceptance.assign(t_networkSize, 0);
-        }
-        //* Dynamics
-        if (process_dynamics){
-            if (t_ensembleSize < 5){
-                dynamics["before"].reserve(networkSize*ensembleSize);
-                dynamics["during"].reserve(networkSize*ensembleSize);
+            //! Order Parameter Distribution
+            {
+                if (time == *findingOrderParameterDist.begin()) {
+                    ++obs_orderParameterDist.at(time)[maximumClusterSize];
+                    findingOrderParameterDist.erase(time);
+                }
             }
-            else{
-                std::cout<<"To many ensemble size to save dynamics.\n";
-                exit(0);
-            }
-        }
 
-    } //* End of function mBFW::generate::setParameters
+            //* Maximum cluster size of network is updated <=> Upper bound of m-BFW model is updated right before
+            if (deltaMaximumClusterSize && time >= 2) {
+                state = m_getState(maximumClusterSize);
+                //* Get basic data
+                const int interEventTime = time - eventTime;
 
-    //*-------------------------------------------Run mBFW model ------------------------------------------------------
-    void run(){
-        for (int ensemble=0; ensemble<ensembleSize; ++ensemble){
-            //* Default values for one ensemble
-            NZ_Network model(networkSize);
-            int node1, node2, root1, root2;
-            int size1, size2;
-            int time = 0;
-            int trialTime = 0;
-            int upperBound = 2;
-            int periodTime = 0;
-            int periodTrialTime = 0;
-            int peakTime = 0;
-            int peakTrialTime = 0;
-            int updatedTime = 0;
-            double maxAcceptance = 0;
-            double maxPeriodAcceptance = 0;
-            bool findNewNodes = true;
-
-            //* initial condition
-            if (process_orderParameter){orderParameter[0] += 1.0/networkSize;}
-            if (process_meanClusterSize){meanClusterSize[0] += 1.0;}
-            if (process_secondGiant){secondGiant[0] += 1.0/networkSize;}
-
-            //* Do rBFW algorithm until all clusters merge to one
-            while (model.getMaximumClusterSize() < networkSize){
-                //* Find new nodes
-                if (findNewNodes){
-                    //* Randomly choose new nodes
-                    do {
-                        node1 = nodeDistribution(randomEngine);
-                        node2 = nodeDistribution(randomEngine);
-                        root1 = model.getRoot(node1);
-                        root2 = model.getRoot(node2);
-                    } while(root1 == root2);
-
-                    //* choose two clusters of each node
-                    size1 = model.getClusterSize(root1);
-                    size2 = model.getClusterSize(root2);
+                //! Inter Event Time
+                {
+                    obs_interEventTime[time].first += interEventTime;
+                    ++obs_interEventTime[time].second;
                 }
 
-                //* Merge two clusters, update time
-                if (size1+size2 <= upperBound){
-                    model.merge(root1, root2);
-                    ++time;
-                    ++trialTime;
-                    ++periodTime;
-                    ++periodTrialTime;
-                    findNewNodes=true;
-                    const int maximumClusterSize = model.getMaximumClusterSize();
-                    const double exactOrderParameter = maximumClusterSize/(double)networkSize;
+                //! Inter Event Time Distribution
+                {
+                    ++obs_interEventTimeDist.at(state)[interEventTime];
+                }
 
-                    //* max acceptance
-                    if ((double)time/trialTime > maxAcceptance){
-                        peakTime = time;
-                        peakTrialTime = trialTime;
-                        maxAcceptance = (double)time/trialTime;
-                    }
+                //! Delta Upper Bound Distribution
+                {
+                    ++obs_deltaUpperBoundDist.at(state)[deltaMaximumClusterSize];
+                }
 
-                    //! Dynamics
-                    do_dynamics(exactOrderParameter, time, trialTime, periodTime, periodTrialTime, maximumClusterSize, upperBound);
-
-                    //! Order Parameter
-                    do_orderParameter(time, exactOrderParameter);
-
-                    //! Mean cluster Size
-                    do_meanClusterSize(time, model.getMeanClusterSize());
-
-                    //! Second Giant
-                    do_secondGiant(time, model.getSecondMaximumClusterSize()/(double)networkSize);
-
-                    //! Age Distribution
-                    do_ageDistribution(exactOrderParameter, model);
-
-                    //! Order Parameter Distribution
-                    do_orderParameterDistribution(time, maximumClusterSize);
-
-                    //* End of k-period
-                    if (model.getDeltaMaximumClusterSize() && model.getMaximumClusterSize()>2){
-                        const int currentInterEventTime = time-updatedTime;
-                        const double currentDeltaAcceptance = maxAcceptance-acceptanceThreshold;
-                        std::string currentState;
-
-                        //! Cluster Size Distribution
-                        do_clusterSizeDistribution(exactOrderParameter, model);
-
-                        //* Before and During Jump
-                        if (exactOrderParameter < m_c){
-                            const int deltaMaximumClusterSize = model.getDeltaMaximumClusterSize();
-                            exactOrderParameter < m_a ? currentState = "before" : currentState = "during";
-
-                            //! Inter Event Time Distribution
-                            do_interEventTimeDistribution(currentState, currentInterEventTime);
-
-                            //! Delta Upper Bound Distribution
-                            do_deltaUpperBoundDistribution(currentState, deltaMaximumClusterSize);
-
-                            //! Delta Acceptance Distribution
-                            do_deltaAcceptanceDistribution(currentState, currentDeltaAcceptance);
-
-                            //! Inter Event Time
-                            do_interEventTime(currentState, time, currentInterEventTime);
-
-                            //! Delta Acceptance
-                            do_deltaAcceptance(currentState, time, currentDeltaAcceptance);
-
-                            //! X vs Delta Acceptance
-                            if (exactOrderParameter < m_a){
-                                do_interEventTime_DeltaAcceptance(currentInterEventTime, currentDeltaAcceptance);
-                                do_upperBound_DeltaAcceptance(upperBound, currentDeltaAcceptance);
-                                do_deltaUpperBound_DeltaAcceptance(deltaMaximumClusterSize, currentDeltaAcceptance);
+                //! Cluster Size Distribution
+                {
+                    findingClusterSizeDist = newFindingClusterSizeDist;
+                    for (const int& op : findingClusterSizeDist) {
+                        if (op < maximumClusterSize) {
+                            const std::map<int, int> sortedCluster = network.getSortedCluster();
+                            for (const std::pair<int, int>& cluster : sortedCluster) {
+                                obs_clusterSizeDist.at(op)[cluster.first] += cluster.second;
                             }
-                        }
-
-                        //* Initialize variable for new k-period
-                        updatedTime = time;
-                        periodTime = 0;
-                        periodTrialTime = 0;
-                        maxAcceptance=0;
-                        maxPeriodAcceptance=0;
-                    }//* End of updating k-period
-                }
-                else if ((double)time/trialTime < acceptanceThreshold){
-                    ++upperBound;
-                    findNewNodes=false;
-                }
-                else{
-                    ++trialTime;
-                    ++periodTrialTime;
-                    findNewNodes=true;
-                }//* End of one step
-            }//* End of network growing (one ensemble)
-        } //* End of every ensembles
-    } //* End of function mBFW::generate::run
-
-    //*-------------------------------------------Save calculated variables------------------------------------------------------
-    void save(){
-        using namespace linearAlgebra;
-
-        //! Order Parameter
-        if (process_orderParameter){
-            const std::string fullFileName = rootDirectory + "orderParameter/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            orderParameter /= ensembleSize;
-            CSV::write(fullFileName, orderParameter);
-        }
-
-        //! Mean Cluster Size
-        if (process_meanClusterSize){
-            const std::string fullFileName = rootDirectory + "meanClusterSize/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            meanClusterSize /= ensembleSize;
-            CSV::write(fullFileName, meanClusterSize);
-        }
-
-        //! Second Giant
-        if (process_secondGiant){
-            const std::string fullFileName = rootDirectory + "secondGiant/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-            secondGiant /= ensembleSize;
-            CSV::write(fullFileName, secondGiant);
-        }
-
-        //! Inter Event Time
-        if (process_interEventTime){
-            for (const auto& state : states){
-                const std::string fullFileName = rootDirectory + "interEventTime/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-                //* save only useful data
-                std::map<double, double> trimmed;
-                for (int t=0; t<networkSize; ++t){
-                    if (sampledInterEventTime[state][t]){
-                        trimmed[(double)t/networkSize] = interEventTime[state][t]/sampledInterEventTime[state][t];
-                    }
-                }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
-
-        //! Delta Acceptance
-        if (process_deltaAcceptance){
-            for (const auto& state : states){
-                const std::string fullFileName = rootDirectory + "deltaAcceptance/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-                //* save only useful data
-                std::map<double, double> trimmed;
-                for (int t=0; t<networkSize; ++t){
-                    if (sampledDeltaAcceptance[state][t]){
-                        trimmed[(double)t/networkSize] = deltaAcceptance[state][t]/sampledDeltaAcceptance[state][t];
-                    }
-                }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
-
-        //! Order Parameter Distribution
-        if (process_orderParameterDistribution){
-            for (const auto& t : time_orderParameterDistribution){
-                const std::string fullFileName = rootDirectory + "orderParameterDistribution/" + filename_time(networkSize, acceptanceThreshold, ensembleSize, t, coreNum);
-
-                //* save only useful data
-                std::map<double, double> trimmed;
-                const double tot = std::accumulate(orderParameterDistribution[t].begin(), orderParameterDistribution[t].end(), 0);
-                for (int mcs=0; mcs<networkSize; ++mcs){
-                    if (orderParameterDistribution[t][mcs]){
-                        trimmed[(double)mcs/networkSize] = orderParameterDistribution[t][mcs]/tot;
-                    }
-                }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
-
-        //! Cluster Size Distribution
-        if (process_clusterSizeDistribution){
-            for (const auto& op : orderParameter_clusterSizeDistribution){
-                const std::string fullFileName = rootDirectory + "clusterSizeDistribution/" + filename_orderParameter(networkSize, acceptanceThreshold, ensembleSize, op, coreNum);
-
-                //* save only useful data
-                std::map<int, double> trimmed;
-                if (sampledClusterSizeDistribution[op] != 0){
-                    for (int cs=0; cs<networkSize; ++cs){
-                        if (clusterSizeDistribution[op][cs]){
-                            trimmed.insert(std::make_pair(cs, (double)clusterSizeDistribution[op][cs]/sampledClusterSizeDistribution[op]));
+                            newFindingClusterSizeDist.erase(op);
                         }
                     }
                 }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
 
-        //! Age Distribution
-        if (process_ageDistribution){
-            for (const auto& state : states){
-                const std::string fullFileName = rootDirectory + "ageDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-                //* save only useful data
-                std::map<int, double> trimmed;
-                const double tot = std::accumulate(ageDistribution[state].begin(), ageDistribution[state].end(), 0.0);
-                for (int age=0; age<networkSize; ++age){
-                    if (ageDistribution[state][age]){
-                        trimmed[age] = ageDistribution[state][age]/tot;
-                    }
+                //! Inter Event Time - Order Parameter
+                {
+                    obs_interEventTime_orderParameter[interEventTime].first += orderParameter;
+                    ++obs_interEventTime_orderParameter[interEventTime].second;
                 }
-                CSV::write(fullFileName, trimmed);
+
+                //* Update event time
+                eventTime = time;
+
+            }  //* End of maximum cluster size updated
+
+        }  //* End of accepting links
+
+        //* Chosen link is rejected: only trial time increased
+        else if ((double)time / trialTime > m_acceptanceThreshold) {
+            ++trialTime;
+            findNewLink = true;
+        }  //* End of rejecting links
+
+        //* Upper bound is changing. Going to accept chosen link right after
+        else {
+            upperBound = newSize;
+            findNewLink = false;
+        }  //* End of updating upper bound
+    }
+}
+
+void Generate::run(const unsigned& t_ensembleSize) {
+    m_ensembleSize = t_ensembleSize;
+    for (unsigned ensemble = 0; ensemble < t_ensembleSize; ++ensemble) {
+        m_singleRun();
+    }
+}
+
+void Generate::save() const {
+    using namespace linearAlgebra;
+    const int precision = -1;  //* Maximum precision
+    const std::string NG = fileName::NG(m_networkSize, m_acceptanceThreshold, m_coreNum);
+    const std::string NGE = fileName::NGE(m_networkSize, m_acceptanceThreshold, m_ensembleSize, m_coreNum);
+
+    //! Order Parameter
+    {
+        const std::string directory = dataDirectory + "orderParameter/";
+        CSV::generateDirectory(directory);
+        const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
+        CSV::write(directory + NGE, orderParameter, precision);
+    }
+
+    //! Second Moment
+    {
+        const std::string directory = dataDirectory + "orderParameterVariance/";
+        CSV::generateDirectory(directory);
+        const std::vector<double> orderParameterVariance = elementPow(obs_secondMoment / (double)m_ensembleSize - elementPow(obs_orderParameter / (double)m_ensembleSize, 2.0), 0.5);
+        CSV::write(directory + NGE, orderParameterVariance, precision);
+    }
+
+    //! Mean Cluster Size
+    {
+        const std::string directory = dataDirectory + "meanClusterSize/";
+        CSV::generateDirectory(directory);
+        std::vector<double> meanClusterSize = obs_meanClusterSize / (double)m_ensembleSize;
+        meanClusterSize.back() = 0.0;
+        CSV::write(directory + NGE, meanClusterSize, precision);
+    }
+
+    //! Inter Event Time
+    {
+        const std::string directory = dataDirectory + "interEventTime/";
+        CSV::generateDirectory(directory);
+        std::map<int, double> trimmed;
+        for (int t = 0; t < m_networkSize; ++t) {
+            if (obs_interEventTime[t].second) {
+                trimmed[t] = obs_interEventTime[t].first / (double)obs_interEventTime[t].second;
             }
         }
+        CSV::write(directory + NGE, trimmed, precision);
+    }
 
-        //! Inter Event Time Distribution
-        if (process_interEventTimeDistribution){
-            for (const auto& state : states){
-                const std::string fullFileName = rootDirectory + "interEventTimeDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-                //* save only useful data
-                std::map<int, double> trimmed;
-                const double tot = std::accumulate(interEventTimeDistribution[state].begin(), interEventTimeDistribution[state].end(), 0.0);
-                for (int iet=0; iet<networkSize; ++iet){
-                    if (interEventTimeDistribution[state][iet]){
-                        trimmed[iet] = interEventTimeDistribution[state][iet]/tot;
-                    }
-                }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
-
-        //! Delta Upper Bound Distribution
-        if (process_deltaUpperBoundDistribution){
-            for (const auto& state : states){
-                const std::string fullFileName = rootDirectory + "deltaUpperBoundDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-                //* save only useful data
-                std::map<int, double> trimmed;
-                const double tot = std::accumulate(deltaUpperBoundDistribution[state].begin(), deltaUpperBoundDistribution[state].end(), 0.0);
-                for (int deltaK=0; deltaK<networkSize; ++deltaK){
-                    if (deltaUpperBoundDistribution[state][deltaK]){
-                        trimmed[deltaK] = deltaUpperBoundDistribution[state][deltaK]/tot;
-                    }
-                }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
-
-        //! Delta Acceptance Distribution
-        if (process_deltaAcceptanceDistribution){
-            for (const auto& state : states){
-                const std::string fullFileName = rootDirectory + "deltaAcceptanceDistribution/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-                //* save only useful data
-                std::map<double, double> trimmed;
-                const int tot = std::accumulate(deltaAcceptanceDistribution[state].begin(), deltaAcceptanceDistribution[state].end(), 0);
-                for (int i=0; i<logBinNum; ++i){
-                    if (deltaAcceptanceDistribution[state][i]){
-                        trimmed[valueBin[i]] = (double)deltaAcceptanceDistribution[state][i]/tot;
-                    }
-                }
-                CSV::write(fullFileName, trimmed);
-            }
-        }
-
-        //! Inter Event Time vs Delta Acceptance
-        if (process_interEventTime_DeltaAcceptance){
-            const std::string fullFileName = rootDirectory + "interEventTime_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-            //* save only useful data
-            std::map<int, double> trimmed;
-            for (int iet=1; iet<networkSize; ++iet){
-                if (sampledInterEventTime_DeltaAcceptance[iet] && interEventTime_DeltaAcceptance[iet]){
-                    trimmed[iet] = interEventTime_DeltaAcceptance[iet]/sampledInterEventTime_DeltaAcceptance[iet];
-                }
-            }
-            CSV::write(fullFileName, trimmed);
-        }
-
-        //! Upper Bound vs Delta Acceptance
-        if (process_upperBound_DeltaAcceptance){
-            const std::string fullFileName = rootDirectory + "upperBound_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-            //* save only useful data
-            std::map<int, double> trimmed;
-            for (int k=2; k<networkSize; ++k){
-                if (sampledUpperBound_DeltaAcceptance[k] && upperBound_DeltaAcceptance[k]){
-                    trimmed[k] = upperBound_DeltaAcceptance[k]/sampledUpperBound_DeltaAcceptance[k];
-                }
-            }
-            CSV::write(fullFileName, trimmed);
-        }
-
-        //! Delta Upper Bound vs Delta Acceptance
-        if (process_deltaUpperBound_DeltaAcceptance){
-            const std::string fullFileName = rootDirectory + "deltaUpperBound_DeltaAcceptance/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, coreNum);
-
-            //* save only useful data
-            std::map<int, double> trimmed;
-            for (int deltaK=1; deltaK<networkSize; ++deltaK){
-                if (sampledDeltaUpperBound_DeltaAcceptance[deltaK] && deltaUpperBound_DeltaAcceptance[deltaK]){
-                    trimmed[deltaK] = deltaUpperBound_DeltaAcceptance[deltaK]/sampledDeltaUpperBound_DeltaAcceptance[deltaK];
-                }
-            }
-            CSV::write(fullFileName, trimmed);
-        }
-
-        //! Dynamics
-        if (process_dynamics){
-            for (auto state : states){
-                const std::string fullFileName = rootDirectory + "dynamics/" + state + "/" + defaultFileName(networkSize, acceptanceThreshold, ensembleSize, -1, randomEngineSeed);
-                CSV::write(fullFileName, dynamics[state]);
-
-            }
+    //! Age Distribution
+    {
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "ageDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
+            CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
         }
     }
-}//* End of namespace mBFW::generate
+
+    //! Inter Event Time Distribution
+    {
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "interEventTimeDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            std::map<int, double> trimmed;
+            for (int iet = 0; iet < m_networkSize; ++iet) {
+                if (obs_interEventTimeDist.at(state)[iet]) {
+                    trimmed[iet] = obs_interEventTimeDist.at(state)[iet] / (double)m_ensembleSize;
+                }
+            }
+            CSV::write(directory + NGE, trimmed, precision);
+        }
+    }
+
+    //! Delta Upper Bound Distribution
+    {
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "deltaUpperBoundDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            std::map<int, double> trimmed;
+            for (int dk = 0; dk < m_networkSize; ++dk) {
+                if (obs_deltaUpperBoundDist.at(state)[dk]) {
+                    trimmed[dk] = obs_deltaUpperBoundDist.at(state)[dk] / (double)m_ensembleSize;
+                }
+            }
+            CSV::write(directory + NGE, trimmed, precision);
+        }
+    }
+
+    //! Cluster Size Distribution
+    {
+        const std::string directory = dataDirectory + "clusterSizeDist/";
+        CSV::generateDirectory(directory);
+        std::vector<std::vector<double>> totalData;
+        totalData.reserve(m_clusterSizeDist_orderParameter.size());
+        for (const int& op : m_clusterSizeDist_orderParameter) {
+            std::vector<double> clusterSizeDist;
+            clusterSizeDist.reserve(2 + 2 * obs_clusterSizeDist.at(op).size());
+            clusterSizeDist.emplace_back((double)op);
+            clusterSizeDist.emplace_back((double)m_ensembleSize);
+            for (const std::pair<int, unsigned long long>& csd : obs_clusterSizeDist.at(op)) {
+                clusterSizeDist.emplace_back((double)csd.first);
+                clusterSizeDist.emplace_back(csd.second / (double)m_ensembleSize);
+            }
+            totalData.emplace_back(clusterSizeDist);
+        }
+        CSV::write(directory + NG, totalData, precision);
+    }
+
+    //! Order Parameter Distribution
+    {
+        const std::string directory = dataDirectory + "orderParameterDist/";
+        CSV::generateDirectory(directory);
+        std::vector<std::vector<double>> totalData;
+        totalData.reserve(m_orderParameterDist_time.size());
+        for (const int& t : m_orderParameterDist_time) {
+            std::vector<double> orderParameterDist;
+            orderParameterDist.reserve(2 + 2 * obs_orderParameterDist.at(t).size());
+            orderParameterDist.emplace_back((double)t);
+            orderParameterDist.emplace_back((double)m_ensembleSize);
+            for (const std::pair<int, unsigned>& opd : obs_orderParameterDist.at(t)) {
+                orderParameterDist.emplace_back((double)opd.first);
+                orderParameterDist.emplace_back(opd.second / (double)m_ensembleSize);
+            }
+            totalData.emplace_back(orderParameterDist);
+        }
+        CSV::write(directory + NG, totalData, precision);
+    }
+
+    //! Inter Event Time - Order Parameter
+    {
+        const std::string directory = dataDirectory + "interEventTime_orderParameter/";
+        CSV::generateDirectory(directory);
+        std::map<int, double> trimmed;
+        for (int iet = 0; iet < m_networkSize; ++iet) {
+            if (obs_interEventTime_orderParameter[iet].second) {
+                trimmed[iet] = obs_interEventTime_orderParameter[iet].first / (double)obs_interEventTime_orderParameter[iet].second;
+            }
+        }
+        CSV::write(directory + NGE, trimmed, precision);
+    }
+}  //* End of function mBFW::Generate::save
+
+}  // namespace mBFW

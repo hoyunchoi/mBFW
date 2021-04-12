@@ -1,64 +1,43 @@
-#include <iostream>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
+#include "common.hpp"
 #include "generate.hpp"
 
-int main(int argc, char *argv[]){
-    //* Input parameters
-    const int networkSize=std::stoul(argv[1]);
-    const double acceptanceThreshold=std::stod(argv[2]);
-    const int ensembleSize=std::stoul(argv[3]);
-    const std::string machine=argv[4];
-    const int coreNum=std::stoul(argv[5]);
-    constexpr int randomEngineSeed = -1;
+int main(int argc, char* argv[]) {
+    //* Get input parameters
+    const int networkSize = std::stoi(argv[1]);
+    const double acceptanceThreshold = std::stod(argv[2]);
+    const unsigned ensembleSize = std::stoul(argv[3]);
+    const int coreNum = std::stoi(argv[4]);
+    const int randomEngineSeed = -1;    //* seed chosen by std::random_device()
 
-    //* Set precision
-    double precision;
-    acceptanceThreshold==0.2 ? precision=1e3 : precision=1e4;
-
-    //* Determine which observables to calculate
-    std::vector<bool> observables(15);
-    observables[0] = false;      //! Order Parameter
-    observables[1] = false;      //! Mean Cluster Size
-    observables[2] = false;      //! Second Giant
-    observables[3] = false;      //! Inter Event Time
-    observables[4] = false;      //! Delta Acceptance
-    observables[5] = false;      //! Order Parameter Distribution
-    observables[6] = false;      //! Cluster Size Distribution
-    observables[7] = true;      //! Age Distribution
-    observables[8] = false;      //! Inter Event Time Distribution
-    observables[9] = true;      //! Delta Upper Bound Distribution
-    observables[10] = false;     //! Delta Acceptance Distribution
-    observables[11] = false;     //! Inter Event Time vs Delta Acceptance
-    observables[12] = true;     //! Upper Bound vs Delta Acceptance
-    observables[13] = true;     //! Delta Upper Bound vs Delta Acceqptance
-    observables[14] = false;    //! Dynamics
-
-    //* warning for random engine seed
-    if (randomEngineSeed != -1){
-        int warning = 0;
-        for (unsigned i=0; i<observables.size()-1; ++i){
-            warning += observables[i];
-        }
-        if (warning){
-            FILE* warn = fopen("warning.txt", "a");
-            fprintf(warn, "At N=%.1e, g=%.1f, e=%d, random engine seed is given", (double)networkSize, acceptanceThreshold, ensembleSize);
-        }
+    //* Check input network size and acceptance threshold
+    if (mBFW::networkSizeList.find(networkSize) == mBFW::networkSizeList.end()) {
+        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        ERROR << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": Not valid network size " << networkSize << "\n";
+        return -1;
+    }
+    if (mBFW::acceptanceThresholdList.find(acceptanceThreshold) == mBFW::acceptanceThresholdList.end()) {
+        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        ERROR << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": Not valid acceptance threshold " << acceptanceThreshold << "\n";
+        return -1;
+    }
+    if (coreNum <= 0) {
+        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        ERROR << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": Not valid core number " << coreNum << "\n";
+        return -1;
     }
 
-    //* run mBFW
-    auto start=std::chrono::system_clock::now();
-    mBFW::generate::setParameters(networkSize, ensembleSize, acceptanceThreshold, precision, coreNum, randomEngineSeed, observables);
-    mBFW::generate::run();
-    std::chrono::duration<double> sec=std::chrono::system_clock::now()-start;
-    FILE* log = fopen("log.txt", "a");
-    fprintf(log, " %.6fs for N=%.1e, g=%.1f, ensemble=%d-%d at %s\n", sec.count(),(double)networkSize, acceptanceThreshold, ensembleSize, coreNum, machine.c_str());
-
-    //* save parameters
-    // start = std::chrono::system_clock::now();
-    mBFW::generate::save();
-    // sec=std::chrono::system_clock::now()-start;
-    // fprintf(log, " %0.6fs for saving\n", sec.count());
+    //* Generate and Run mBFW::Generate model
+    const auto start = std::chrono::system_clock::now();
+    mBFW::Generate model(networkSize, acceptanceThreshold, coreNum, randomEngineSeed);
+    model.run(ensembleSize);
+    model.save();
+    std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
+    std::ofstream logFile("time.log", std::ios_base::app);
+    logFile << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": " << std::setprecision(6) << sec.count() << "seconds\n";
 
     return 0;
 }

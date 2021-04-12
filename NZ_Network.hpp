@@ -1,149 +1,157 @@
 #pragma once
 
-#include <vector>
-#include <map>
 #include <cmath>
+#include <map>
+#include <utility>
+#include <vector>
 
-//* Network class with merging cluster by Newman-Ziff algorithm
-struct NZ_Network{
-private:
-    //* Size of nodes and links
-    int m_size{0};
-    int m_linkSize{0};
+struct NZ_Node {
+   public:
+    int index;
+    int parent{-1};
+    int birth{0};
 
-    //* Maximum Cluster and Second Maximum Cluster
-    int m_maximumClusterSize{1};
-    int m_secondMaximumClusterSize{1};
-    int m_deltaMaximumClusterSize{0};
+   public:
+    NZ_Node() {}
+    NZ_Node(const int& t_index) : index(t_index){};
+};
 
-    //* m_parent[node] : parent of each 'node'
-    std::vector<int> m_parent;
+struct NZ_Network {
+   public:
+    int networkSize{0};
+    unsigned long long linkSize{0};
+    int maximumClusterSize{1};
+    int deltaMaximumClusterSize{0};
+    std::vector<std::pair<unsigned long long, int>> changedAge;  //* changedAge[0,1] : {age, size} of two merged roots
 
-    //* m_sortedCluster[size] : number of cluster of 'size'
-    std::map<int, int> m_sortedCluster;
+   protected:
+    std::map<int, int> m_sortedCluster;  //* sortedCluster[size] : number of cluster of 'size'
+    std::vector<NZ_Node> m_nodes;
 
-    //* m_birth[root] : birth time of each 'root'
-    //* changedAge[root] : {age, size} of cluster with 'root'
-    std::vector<int> m_birth;
-    std::vector<std::pair<int, int>> m_changedAge;
-
-public:
+   public:
     //* Constructor
     NZ_Network() {}
+    NZ_Network(const int&);
 
-    NZ_Network(const int &t_size)
-    : m_size(t_size)
-    {
-        //* Make every node to root node with size 1
-        m_parent.resize(t_size,-1);
-
-        //* Initialize Sorted Cluster
-        m_sortedCluster[1] = t_size;
-
-        //* Initialize birth time with 0 and changedAge
-        m_birth.resize(t_size);
-        m_changedAge.resize(2,std::pair<int, int> {0,0});
-    }
-
-    //* Simple get functions
-    int getMaximumClusterSize() const {return m_maximumClusterSize;}
-    int getClusterSize(const int& t_root) const {return -m_parent[t_root];}
-    int getDeltaMaximumClusterSize() const {return m_deltaMaximumClusterSize;}
-    std::vector<std::pair<int,int>> getChangedAge() const {return m_changedAge;}
-
-
-    //* get the root of input node
-    int getRoot(const int &t_node){
-        //* t_node is root
-        if (m_parent[t_node] < 0){
-            return t_node;
-        }
-        //* recursively find node
-        return m_parent[t_node] = getRoot(m_parent[t_node]);
-    }
+    //* Get the root of input node
+    const int getRoot(const int&);
 
     //* Merge two clusters
-    void merge(const int& t_root1, const int& t_root2){
-        //! update link size
-        m_linkSize++;
+    //* Two input index should be different root
+    void merge(const int&, const int&);
+    const int getSize(const int&) const;
+    const int getSecondMaximumClusterSize() const;
+    const std::map<int, int> getSortedCluster(const int&) const;
+    const double getMeanClusterSize() const;
 
-        //! Save age and reset birth time
-        m_changedAge[0] = std::pair<int,int>{m_linkSize-m_birth[t_root1], -m_parent[t_root1]};
-        m_changedAge[1] = std::pair<int,int>{m_linkSize-m_birth[t_root2], -m_parent[t_root2]};
-        m_birth[t_root1] = m_linkSize;
-        m_birth[t_root2] = m_linkSize;
-
-        //! Get the size of each clusters
-        const int size1 = -m_parent[t_root1];
-        const int size2 = -m_parent[t_root2];
-        const int newSize = size1+size2;
-
-        //! Update Parent
-        m_parent[t_root1] -= size2;
-        m_parent[t_root2] = t_root1;
-
-        //! Update Sorted Cluster
-        --m_sortedCluster[size1];
-        if (m_sortedCluster[size1]==0){
-            m_sortedCluster.erase(size1);
-        }
-        --m_sortedCluster[size2];
-        if (m_sortedCluster[size2]==0){
-            m_sortedCluster.erase(size2);
-        }
-        ++m_sortedCluster[newSize];
-
-        //! Find maximum cluster
-        if (m_maximumClusterSize < newSize){
-            m_deltaMaximumClusterSize = newSize-m_maximumClusterSize;
-            m_maximumClusterSize = newSize;
-        }
-        else{
-            m_deltaMaximumClusterSize = 0;
-        }
-    }
-
-    //* Calculate second Maximum Cluster Size
-    void processSecondMaximumClusterSize(){
-        for (auto it=m_sortedCluster.rbegin(); it != m_sortedCluster.rend(); ++it){
-            if (it->first != m_maximumClusterSize || it->second>1){
-                m_secondMaximumClusterSize = it->first;
-                break;
-            }
-        }
-    }
-
-    //* Get second Maximum Cluster Size
-    int getSecondMaximumClusterSize(){
-        processSecondMaximumClusterSize();
-        return m_secondMaximumClusterSize;
-    }
-
-    //* Get sorted Cluster
-    std::map<int,int> getSortedCluster(const int &excludeNum=1){
-        std::map<int,int> result=m_sortedCluster;
-
-        //! exclude maximum cluster
-        --result[m_maximumClusterSize];
-
-        //! exclude second giant
-        if (excludeNum-1){
-            processSecondMaximumClusterSize();
-            --result[m_secondMaximumClusterSize];
-        }
-        return result;
-    }
-
-    //* Get Mean cluster size
-    double getMeanClusterSize() const{
-        const int firstMoment = m_size-m_maximumClusterSize;
-        double secondMoment = 0;
-        for (auto it=m_sortedCluster.begin(); it!=m_sortedCluster.end(); ++it){
-            secondMoment += pow(it->first,2)*it->second;
-        }
-        //! exclude infinite size cluster
-        secondMoment -= pow(m_maximumClusterSize,2);
-
-        return secondMoment/firstMoment;
-    }
+   protected:
+    void m_updateAge(const int&, const int&, const int&, const int&);
+    void m_updateSortedCluster(const int&, const int&);
+    void m_updateMaximumClusterSize(const int&);
 };
+
+NZ_Network::NZ_Network(const int& t_networkSize) : networkSize(t_networkSize) {
+    //* Generate default nodes
+    m_nodes.reserve(t_networkSize);
+    for (int index = 0; index < t_networkSize; ++index) {
+        NZ_Node node(index);
+        m_nodes.emplace_back(node);
+    }
+
+    //* Initialize sorted cluster and age
+    m_sortedCluster[1] = t_networkSize;
+    changedAge.assign(2, std::pair<int, int>{0, 0});
+}
+
+const int NZ_Network::getRoot(const int& t_index) {
+    if (m_nodes[t_index].parent < 0) {
+        return t_index;
+    }
+    return m_nodes[t_index].parent = getRoot(m_nodes[t_index].parent);
+}
+
+const int NZ_Network::getSize(const int& t_root) const {
+    return -1 * m_nodes[t_root].parent;
+}
+
+void NZ_Network::m_updateAge(const int& t_root1, const int& t_size1, const int& t_root2, const int& t_size2) {
+    changedAge[0] = std::pair<unsigned long long, int>{linkSize - m_nodes[t_root1].birth, t_size1};
+    changedAge[1] = std::pair<unsigned long long, int>{linkSize - m_nodes[t_root2].birth, t_size2};
+    m_nodes[t_root1].birth = linkSize;
+}
+
+void NZ_Network::m_updateSortedCluster(const int& t_size1, const int& t_size2) {
+    --m_sortedCluster[t_size1];
+    if (!m_sortedCluster[t_size1]) {
+        m_sortedCluster.erase(t_size1);
+    }
+    --m_sortedCluster[t_size2];
+    if (!m_sortedCluster[t_size2]) {
+        m_sortedCluster.erase(t_size2);
+    }
+    ++m_sortedCluster[t_size1 + t_size2];
+}
+
+void NZ_Network::m_updateMaximumClusterSize(const int& t_newSize) {
+    if (maximumClusterSize < t_newSize) {
+        deltaMaximumClusterSize = t_newSize - maximumClusterSize;
+        maximumClusterSize = t_newSize;
+    } else {
+        deltaMaximumClusterSize = 0;
+    }
+}
+
+void NZ_Network::merge(const int& t_root1, const int& t_root2) {
+    //* Update link size
+    ++linkSize;
+
+    //* Get size of two clusters
+    const int size1 = getSize(t_root1);
+    const int size2 = getSize(t_root2);
+    const int newSize = size1 + size2;
+
+    //* Optional observables
+    m_updateMaximumClusterSize(newSize);
+    m_updateAge(t_root1, size1, t_root2, size2);
+    m_updateSortedCluster(size1, size2);
+
+    //* Update parents
+    m_nodes[t_root1].parent -= size2;
+    m_nodes[t_root2].parent = t_root1;
+}
+
+const int NZ_Network::getSecondMaximumClusterSize() const {
+    for (auto it = m_sortedCluster.rbegin(); it != m_sortedCluster.rend(); ++it) {
+        if (it->first != maximumClusterSize || it->second > 1) {
+            return it->first;
+        }
+    }
+    return 1;
+}
+
+const std::map<int, int> NZ_Network::getSortedCluster(const int& excludeNum = 1) const {
+    std::map<int, int> result = m_sortedCluster;
+
+    //* Exclue maximum cluster
+    --result[maximumClusterSize];
+    if (!result[maximumClusterSize]) {
+        result.erase(maximumClusterSize);
+    }
+    //* If exclude number = 2, exclude second maximum cluster
+    if (excludeNum == 2) {
+        --result[getSecondMaximumClusterSize()];
+    }
+    return result;
+}
+
+const double NZ_Network::getMeanClusterSize() const {
+    //* Get first moment of cluster size excluding maximum cluster
+    const int firstMoment = networkSize - maximumClusterSize;
+
+    //* Get second moment of cluster size excluding maximum cluster
+    double secondMoment = std::pow(maximumClusterSize, 2.0) * (m_sortedCluster.at(maximumClusterSize) - 1);
+    for (auto it = ++m_sortedCluster.rbegin(); it != m_sortedCluster.rend(); ++it) {
+        secondMoment += std::pow(it->first, 2.0) * it->second;
+    }
+    return secondMoment / firstMoment;
+}
