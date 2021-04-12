@@ -379,30 +379,30 @@ m_c_csd[10240000, 0.9] = 0.380
 
 # *---------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    # print("This is a module parameters.py")
-    import sys
-    sys.path.append("../library")
-    import readData
+    print("This is a module parameters.py")
+    # import sys
+    # sys.path.append("../library")
+    # import read_data as rd
 
-    for acceptanceThreshold in acceptanceThresholdList:
-        for networkSize in networkSizeList:
-            orderParameter = readData.read("orderParameter", networkSize, acceptanceThreshold)
-            t_c_csd = 0.0
-            for index, op in enumerate(orderParameter):
-                if (op > m_c_csd[networkSize, acceptanceThreshold]):
-                    t_c_csd = index/networkSize
-                    break
-            slope = orderParameter[1:] - orderParameter[:-1]
-            maxIndex = np.argmax(slope)
-            inflection_t = maxIndex / networkSize
-            inflection_m = op[maxIndex]
-            t_a = inflection_t - slope[maxIndex] * networkSize / inflection_m
-            m_a = op[int(t_a*networkSize)]
+    # for acceptanceThreshold in acceptanceThresholdList:
+    #     for networkSize in networkSizeList:
+    #         orderParameter = rd.read("orderParameter", networkSize, acceptanceThreshold)
+    #         t_c_csd = 0.0
+    #         for index, op in enumerate(orderParameter):
+    #             if (op > m_c_csd[networkSize, acceptanceThreshold]):
+    #                 t_c_csd = index/networkSize
+    #                 break
+    #         slope = orderParameter[1:] - orderParameter[:-1]
+    #         maxIndex = np.argmax(slope)
+    #         inflection_t = maxIndex / networkSize
+    #         inflection_m = op[maxIndex]
+    #         t_a = inflection_t - slope[maxIndex] * networkSize / inflection_m
+    #         m_a = op[int(t_a*networkSize)]
 
-            with open("../data/mBFW/points/" + "N{:.1e},G{:.1f}".format(networkSize, acceptanceThreshold) + ".txt", 'a') as file:
-                file.write("t_a: {:.15f}".format(t_a))
-                file.write("m_a: {:.15f}".format(m_a))
-                file.write("t_inflection: {:.15f}".format(inflection_t))
-                file.write("m_inflection: {:.15f}".format(inflection_m))
-                file.write("t_c_csd: " + str(t_c_csd) + "\n")
-                file.write("m_c_csd: " + str(m_c_csd[networkSize, acceptanceThreshold]) + "\n")
+    #         with open("../data/mBFW/points/" + "N{:.1e},G{:.1f}".format(networkSize, acceptanceThreshold) + ".txt", 'a') as file:
+    #             file.write("t_a: {:.15f}".format(t_a))
+    #             file.write("m_a: {:.15f}".format(m_a))
+    #             file.write("t_inflection: {:.15f}".format(inflection_t))
+    #             file.write("m_inflection: {:.15f}".format(inflection_m))
+    #             file.write("t_c_csd: " + str(t_c_csd) + "\n")
+    #             file.write("m_c_csd: " + str(m_c_csd[networkSize, acceptanceThreshold]) + "\n")

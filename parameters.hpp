@@ -52,28 +52,15 @@ void Parameter::m_set_points() {
     std::ifstream readFile(pointFileName);
     std::string line;
     while (getline(readFile, line)) {
-        //* Find line for each points
-        if (line.find("t_a") != line.npos) {
-            m_points["t_a"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("m_a") != line.npos) {
-            m_points["m_a"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("inf_ta") != line.npos){
-            m_points["t_a2"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("inf_ma") != line.npos){
-            m_points["m_a2"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("t_g") != line.npos) {
-            m_points["t_b"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("m_g") != line.npos) {
-            m_points["m_b"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("t_c_csd") != line.npos) {
-            m_points["t_c"] = std::stod(line.substr(line.find(": ") + 2));
-        } else if (line.find("m_c_csd") != line.npos) {
-            m_points["m_c"] = std::stod(line.substr(line.find(": ") + 2));
+        for (const std::string& type : mBFW::pointTypes){
+            if (line.find(type) != line.npos){
+                m_points[type] = std::stod(line.substr(line.find(": ") + 2));
+            }
         }
     }
 
     //* Check if every points are set
-    if (m_points.size() != 8) {
+    if (m_points.size() != mBFW::pointTypes.size()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << "Problem at reading " << pointFileName << "\n";
         exit(1);
@@ -164,9 +151,10 @@ void Parameter::m_set_orderParameterDist_time() {
     std::vector<double> extra;
 
     //* Default values: near t_a
-    m_orderParameterDist_time = linearAlgebra::arange(m_points["t_a"] - 0.01, m_points["t_a"] + 0.01, 0.0001);
-    m_orderParameterDist_time.emplace_back(m_points["t_b"]);
-    m_orderParameterDist_time.emplace_back(m_points["t_c"]);
+    m_orderParameterDist_time = linearAlgebra::arange(m_points.at("t_a1") - 0.01, m_points.at("t_a1") + 0.01, 0.0001);
+    m_orderParameterDist_time.emplace_back(m_points.at("t_a2"));
+    m_orderParameterDist_time.emplace_back(m_points.at("t_b"));
+    m_orderParameterDist_time.emplace_back(m_points.at("t_c"));
 
     //* Extra values
     if (m_acceptanceThreshold == 0.2) {
