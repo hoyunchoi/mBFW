@@ -1,4 +1,5 @@
 import sys
+from numpy.core.fromnumeric import repeat
 sys.path.append("../library/")
 import pandas as pd
 import glob
@@ -7,61 +8,36 @@ from dataProcess import *
 
 
 dataDirectory = "../data/mBFW/"
-states = ["0A1", "A1A2", "A2G", "GC", "C1"]
+states = ["0_A1", "A1_A2", "A2_B", "B_C", "C_1"]
+states_directory = ["0A1", "A1A2", "A2B", "BC", "C1"]
 point_type = ["t_a1", "m_a1", "t_a2", "m_a2", "t_b", "m_b", "t_c", "m_c", "t_inflection", "m_inflection"]
 observables = set()
+observables.add("points")
 
-#* Continuous observables
 observables.add("orderParameter")
 observables.add("meanClusterSize")
 observables.add("orderParameterVariance")
-
-observables.add("orderParameter_trial")
-observables.add("meanClusterSize_trial")
-observables.add("orderParameterVariance_trial")
-
-#* Discrete observables
 observables.add("interEventTime")
-observables.add("dotOrderParameter")
-observables.add("noRestriction")
-
-#* Basic distributions
-for standard in ["", "_exact", "_time"]:
-    observables.add("clusterSizeDist" + standard)
-observables.add("orderParameterDist")
-
 
 #* Observables distinguished by intervals
-for state in states:
-    observables.add("ageDist/" + state)
-    observables.add("ageDist_time/" + state)
-    observables.add("interEventTimeDist/" + state)
-    observables.add("interEventTimeDist_time/" + state)
-    observables.add("deltaUpperBoundDist/" + state)
-    observables.add("deltaUpperBoundDist_time/" + state)
-    # observables.add("interEventTime_deltaUpperBound/" + state)
+# for state in states:
+observables.add("ageDist")
+observables.add("interEventTimeDist")
+observables.add("deltaUpperBoundDist")
 
-#* 3D sampled and its derivatives
-observables.add("sampled_deltaUpperBound_interEventTime")
-observables.add("sampled_upperBound_interEventTime")
-observables.add("sampled_time_interEventTime")
-observables.add("deltaUpperBound_interEventTime_tot")
-observables.add("interEventTime_deltaUpperBound_tot")
-observables.add("interEventTime_upperBound_tot")
-observables.add("upperBound_interEventTime_tot")
-observables.add("time_interEventTime_tot")
-observables.add("interEventTime_time_tot")
+observables.add("clusterSizeDist")
+observables.add("orderParameterDist")
 
-#* Other observables
-observables.add("points")
-observables.add("dynamics")
-observables.add("periodDynamics")
-
+observables.add("interEventTime_orderParameter")
 
 absolutePathList = {}
 for observable in observables:
-    if ("clusterSizeDist" in observable) or (observable == "orderParameterDist"):
+    if (observable == "clusterSizeDist") or (observable == "orderParameterDist"):
         absolutePathList[observable] = dataDirectory + observable + "/single/"
+    elif "Dist" in observable:
+        absolutePathList[observable] = {}
+        for state,directory in zip(states, states_directory):
+            absolutePathList[observable][state] = dataDirectory + observable + "/" + directory + "/"
     else:
         absolutePathList[observable] = dataDirectory + observable + "/"
 
@@ -121,14 +97,18 @@ def readPoints(networkSize, acceptanceThreshold):
 # * Read Observables
 
 
-def read(type, networkSize, acceptanceThreshold, t_reapeater=None):
+def read(type, networkSize, acceptanceThreshold, repeater=None):
     # * Read time-accumulated distributions
-    if (type == "clusterSizeDist_time" or type == "orderParameterDist"):
-        file = glob.glob(absolutePathList[type] + __NGT__(networkSize, acceptanceThreshold, t_reapeater))
+    if type == "orderParameterDist":
+        file = glob.glob(absolutePathList[type] + __NGT__(networkSize, acceptanceThreshold, repeater))
 
     # * Read orderparameter-accumulated distributions
-    elif (type == "clusterSizeDist" or type == "clusterSizeDist_exact"):
-        file = glob.glob(absolutePathList[type] + __NGOP__(networkSize, acceptanceThreshold, t_reapeater))
+    elif type == "clusterSizeDist":
+        file = glob.glob(absolutePathList[type] + __NGOP__(networkSize, acceptanceThreshold, repeater))
+
+    # * Read distribution
+    elif "Dist" in type:
+        file = glob.glob(absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
 
     # * Read general data
     else:
@@ -136,7 +116,7 @@ def read(type, networkSize, acceptanceThreshold, t_reapeater=None):
 
     # * Check found files
     if (len(file) != 1):
-        print("There is problem at reading " + type + " at N={:.1e}".format(networkSize) + ", G={:.1f}".format(acceptanceThreshold))
+        print("There is problem at reading " + file[0])
         return
     return readCSV(file[0])
 
@@ -157,18 +137,22 @@ def op2t(orderParameter, op):
         if (value > op):
             return t
 
+def decompose_state(state):
+    return state[:state.find("_")], state[state.find("_")+1: ]
 
-def getSubState(state):
+def get_sub_state(target_state):
     index = np.zeros(2, dtype=np.int8)
-    for i, s in enumerate(states):
-        if s[0] == state[0]:
+    start, end = decompose_state(target_state)
+    for i, state in enumerate(states):
+        state_start, state_end = decompose_state(state)
+        if state_start == start:
             index[0] = i
-        if s[1] == state[1]:
+        if state_end == end:
             index[1] = i
-    return states[index[0]: index[1] + 1]
+    return states[index[0] : index[1]+1]
 
 
-def find_inflection_ta(networkSize, orderParameter, delta=1e-4):
+def get_ta_inflection(networkSize, orderParameter, delta=1e-4):
     time = np.arange(0.0, 1.0, 1 / networkSize)
     bin_t, bin_op = avgLinBin(time, orderParameter, delta=delta)
     inclination = (bin_op[1:] - bin_op[:-1]) / delta
@@ -179,30 +163,26 @@ def find_inflection_ta(networkSize, orderParameter, delta=1e-4):
     inflection_ma = orderParameter[int(inflection_ta * networkSize)]
     return inflection_ta, inflection_ma, inflection_t, inflection_op
 
+def expandState(standard, state):
+    if state == "0":
+        return "0.0"
+    elif state == "A1":
+        return standard  + "_0"
+    elif state == "A2":
+        return standard + "_a"
+    elif state == "B":
+        return standard + "_b"
+    elif state == "C":
+        return standard + "_c"
+    elif state == "1":
+        return "1.0"
+    else:
+        return standard + "_" + state
+
+def state2title(standard, target_state):
+    title = standard + "\in ["
+    start, end = decompose_state(target_state)
+    return title + expandState(standard, start) + "," + expandState(standard, end) + "]"
 
 if __name__ == "__main__":
     print("This is a module readData.py")
-    # points = {}
-    # for g in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-    #     for N in [20000, 160000, 1280000, 10240000]:
-    #         points[N, g] = readPoints(N, g)
-
-    # for g in [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-    #     print("g={:.1f}".format(g))
-    #     print("t_a1: ", end='')
-    #     for N in [20000, 160000, 1280000, 10240000]:
-    #         print("{:.4f}".format(points[N, g]["t_a1"]), end='\t')
-    #     print()
-    #     print("t_a2: ", end='')
-    #     for N in [20000, 160000, 1280000, 10240000]:
-    #         print("{:.4f}".format(points[N, g]["t_a2"]), end='\t')
-    #     print()
-    #     print("t_b: ", end='')
-    #     for N in [20000, 160000, 1280000, 10240000]:
-    #         print("{:.4f}".format(points[N, g]["t_b"]), end='\t')
-    #     print()
-    #     print("t_c: ", end='')
-    #     for N in [20000, 160000, 1280000, 10240000]:
-    #         print("{:.4f}".format(points[N, g]["t_c"]), end='\t')
-    #     print("\n-----------------------")
-
