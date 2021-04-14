@@ -24,8 +24,8 @@ function build {
 }
 
 #* Compile the source files
-# build
-debugBuild
+build
+# debugBuild
 
 #* Run
 cd ${binDir}
