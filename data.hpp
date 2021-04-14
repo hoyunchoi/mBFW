@@ -40,8 +40,6 @@ struct Data {
     const std::string m_defineAdditionalDirectory(const std::string&, const std::string&) const;
     const std::set<std::string> m_findTargetFileNameList(const std::string&, const std::string&) const;
     const unsigned m_extractEnsemble(const std::string&) const;
-    const double m_extractRepeater(const std::string&, const std::string&, const unsigned&) const;
-    const std::set<double> m_extractRepeaterList(const std::set<std::string>&, const std::string&, const unsigned&) const;
     void m_conditionallyDeleteFile(const std::string&) const;
 
     //* Data handling
@@ -120,18 +118,6 @@ const unsigned Data::m_extractEnsemble(const std::string& t_fileName) const {
     return std::stoul(temp);
 }
 
-const double Data::m_extractRepeater(const std::string& t_fileName, const std::string& t_standard, const unsigned& t_standardSize = 6) const {
-    return std::stod(t_fileName.substr(t_fileName.find(t_standard) + t_standard.size(), t_standardSize));
-}
-
-const std::set<double> Data::m_extractRepeaterList(const std::set<std::string>& t_fileNameList, const std::string& t_standard, const unsigned& t_standardSize = 6) const {
-    std::set<double> repeaterList;
-    for (const auto& fileName : t_fileNameList) {
-        repeaterList.emplace(m_extractRepeater(fileName, t_standard, t_standardSize));
-    }
-    return repeaterList;
-}
-
 void Data::m_conditionallyDeleteFile(const std::string& t_deletionFile) const {
     if (m_deletion) {
         std::cout << "Deleting file " << t_deletionFile << "\n";
@@ -193,6 +179,7 @@ void Data::continuousAverage(const std::string& t_type, const T& t_format) const
     if (fileNameList.empty()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
         std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
@@ -227,6 +214,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     if (fileNameList.empty()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
         std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
@@ -328,6 +316,7 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
     if (fileNameList.empty()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
         std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";

@@ -17,11 +17,13 @@ int main(int argc, char* argv[]) {
     if (mBFW::networkSizeList.find(networkSize) == mBFW::networkSizeList.end()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": Not valid network size " << networkSize << "\n";
+        ERROR.close();
         return -1;
     }
     if (mBFW::acceptanceThresholdList.find(acceptanceThreshold) == mBFW::acceptanceThresholdList.end()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": Not valid acceptance threshold " << acceptanceThreshold << "\n";
+        ERROR.close();
         return -1;
     }
 

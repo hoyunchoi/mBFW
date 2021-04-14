@@ -282,80 +282,80 @@ void Generate::save() const {
 
     //! Order Parameter
     {
-        const std::string directory = dataDirectory + "orderParameter/";
-        CSV::generateDirectory(directory);
-        const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
-        CSV::write(directory + NGE, orderParameter, precision);
+        // const std::string directory = dataDirectory + "orderParameter/";
+        // CSV::generateDirectory(directory);
+        // const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
+        // CSV::write(directory + NGE, orderParameter, precision);
     }
 
     //! Second Moment
     {
-        const std::string directory = dataDirectory + "orderParameterVariance/";
-        CSV::generateDirectory(directory);
-        const std::vector<double> orderParameterVariance = elementPow(obs_secondMoment / (double)m_ensembleSize - elementPow(obs_orderParameter / (double)m_ensembleSize, 2.0), 0.5);
-        CSV::write(directory + NGE, orderParameterVariance, precision);
+        // const std::string directory = dataDirectory + "orderParameterVariance/";
+        // CSV::generateDirectory(directory);
+        // const std::vector<double> orderParameterVariance = elementPow(obs_secondMoment / (double)m_ensembleSize - elementPow(obs_orderParameter / (double)m_ensembleSize, 2.0), 0.5);
+        // CSV::write(directory + NGE, orderParameterVariance, precision);
     }
 
     //! Mean Cluster Size
     {
-        const std::string directory = dataDirectory + "meanClusterSize/";
-        CSV::generateDirectory(directory);
-        std::vector<double> meanClusterSize = obs_meanClusterSize / (double)m_ensembleSize;
-        meanClusterSize.back() = 0.0;
-        CSV::write(directory + NGE, meanClusterSize, precision);
+        // const std::string directory = dataDirectory + "meanClusterSize/";
+        // CSV::generateDirectory(directory);
+        // std::vector<double> meanClusterSize = obs_meanClusterSize / (double)m_ensembleSize;
+        // meanClusterSize.back() = 0.0;
+        // CSV::write(directory + NGE, meanClusterSize, precision);
     }
 
     //! Inter Event Time
     {
-        const std::string directory = dataDirectory + "interEventTime/";
-        CSV::generateDirectory(directory);
-        std::map<int, double> trimmed;
-        for (int t = 0; t < m_networkSize; ++t) {
-            if (obs_interEventTime[t].second) {
-                trimmed[t] = obs_interEventTime[t].first / (double)obs_interEventTime[t].second;
-            }
-        }
-        CSV::write(directory + NGE, trimmed, precision);
+        // const std::string directory = dataDirectory + "interEventTime/";
+        // CSV::generateDirectory(directory);
+        // std::map<int, double> trimmed;
+        // for (int t = 0; t < m_networkSize; ++t) {
+        //     if (obs_interEventTime[t].second) {
+        //         trimmed[t] = obs_interEventTime[t].first / (double)obs_interEventTime[t].second;
+        //     }
+        // }
+        // CSV::write(directory + NGE, trimmed, precision);
     }
 
     //! Age Distribution
     {
-        for (const std::string& state : mBFW::states) {
-            const std::string directory = dataDirectory + "ageDist/" + state + "/";
-            CSV::generateDirectory(directory);
-            const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
-            CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
-        }
+        // for (const std::string& state : mBFW::states) {
+        //     const std::string directory = dataDirectory + "ageDist/" + state + "/";
+        //     CSV::generateDirectory(directory);
+        //     const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
+        //     CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
+        // }
     }
 
     //! Inter Event Time Distribution
     {
-        for (const std::string& state : mBFW::states) {
-            const std::string directory = dataDirectory + "interEventTimeDist/" + state + "/";
-            CSV::generateDirectory(directory);
-            std::map<int, double> trimmed;
-            for (int iet = 0; iet < m_networkSize; ++iet) {
-                if (obs_interEventTimeDist.at(state)[iet]) {
-                    trimmed[iet] = obs_interEventTimeDist.at(state)[iet] / (double)m_ensembleSize;
-                }
-            }
-            CSV::write(directory + NGE, trimmed, precision);
-        }
+        // for (const std::string& state : mBFW::states) {
+        //     const std::string directory = dataDirectory + "interEventTimeDist/" + state + "/";
+        //     CSV::generateDirectory(directory);
+        //     std::map<int, double> trimmed;
+        //     for (int iet = 0; iet < m_networkSize; ++iet) {
+        //         if (obs_interEventTimeDist.at(state)[iet]) {
+        //             trimmed[iet] = obs_interEventTimeDist.at(state)[iet] / (double)m_ensembleSize;
+        //         }
+        //     }
+        //     CSV::write(directory + NGE, trimmed, precision);
+        // }
     }
 
     //! Delta Upper Bound Distribution
     {
-        for (const std::string& state : mBFW::states) {
-            const std::string directory = dataDirectory + "deltaUpperBoundDist/" + state + "/";
-            CSV::generateDirectory(directory);
-            std::map<int, double> trimmed;
-            for (int dk = 0; dk < m_networkSize; ++dk) {
-                if (obs_deltaUpperBoundDist.at(state)[dk]) {
-                    trimmed[dk] = obs_deltaUpperBoundDist.at(state)[dk] / (double)m_ensembleSize;
-                }
-            }
-            CSV::write(directory + NGE, trimmed, precision);
-        }
+        // for (const std::string& state : mBFW::states) {
+        //     const std::string directory = dataDirectory + "deltaUpperBoundDist/" + state + "/";
+        //     CSV::generateDirectory(directory);
+        //     std::map<int, double> trimmed;
+        //     for (int dk = 0; dk < m_networkSize; ++dk) {
+        //         if (obs_deltaUpperBoundDist.at(state)[dk]) {
+        //             trimmed[dk] = obs_deltaUpperBoundDist.at(state)[dk] / (double)m_ensembleSize;
+        //         }
+        //     }
+        //     CSV::write(directory + NGE, trimmed, precision);
+        // }
     }
 
     //! Cluster Size Distribution
@@ -380,35 +380,35 @@ void Generate::save() const {
 
     //! Order Parameter Distribution
     {
-        const std::string directory = dataDirectory + "orderParameterDist/";
-        CSV::generateDirectory(directory);
-        std::vector<std::vector<double>> totalData;
-        totalData.reserve(m_orderParameterDist_time.size());
-        for (const int& t : m_orderParameterDist_time) {
-            std::vector<double> orderParameterDist;
-            orderParameterDist.reserve(2 + 2 * obs_orderParameterDist.at(t).size());
-            orderParameterDist.emplace_back((double)t);
-            orderParameterDist.emplace_back((double)m_ensembleSize);
-            for (const std::pair<int, unsigned>& opd : obs_orderParameterDist.at(t)) {
-                orderParameterDist.emplace_back((double)opd.first);
-                orderParameterDist.emplace_back(opd.second / (double)m_ensembleSize);
-            }
-            totalData.emplace_back(orderParameterDist);
-        }
-        CSV::write(directory + NG, totalData, precision);
+        // const std::string directory = dataDirectory + "orderParameterDist/";
+        // CSV::generateDirectory(directory);
+        // std::vector<std::vector<double>> totalData;
+        // totalData.reserve(m_orderParameterDist_time.size());
+        // for (const int& t : m_orderParameterDist_time) {
+        //     std::vector<double> orderParameterDist;
+        //     orderParameterDist.reserve(2 + 2 * obs_orderParameterDist.at(t).size());
+        //     orderParameterDist.emplace_back((double)t);
+        //     orderParameterDist.emplace_back((double)m_ensembleSize);
+        //     for (const std::pair<int, unsigned>& opd : obs_orderParameterDist.at(t)) {
+        //         orderParameterDist.emplace_back((double)opd.first);
+        //         orderParameterDist.emplace_back(opd.second / (double)m_ensembleSize);
+        //     }
+        //     totalData.emplace_back(orderParameterDist);
+        // }
+        // CSV::write(directory + NG, totalData, precision);
     }
 
     //! Inter Event Time - Order Parameter
     {
-        const std::string directory = dataDirectory + "interEventTime_orderParameter/";
-        CSV::generateDirectory(directory);
-        std::map<int, double> trimmed;
-        for (int iet = 0; iet < m_networkSize; ++iet) {
-            if (obs_interEventTime_orderParameter[iet].second) {
-                trimmed[iet] = obs_interEventTime_orderParameter[iet].first / (double)obs_interEventTime_orderParameter[iet].second;
-            }
-        }
-        CSV::write(directory + NGE, trimmed, precision);
+        // const std::string directory = dataDirectory + "interEventTime_orderParameter/";
+        // CSV::generateDirectory(directory);
+        // std::map<int, double> trimmed;
+        // for (int iet = 0; iet < m_networkSize; ++iet) {
+        //     if (obs_interEventTime_orderParameter[iet].second) {
+        //         trimmed[iet] = obs_interEventTime_orderParameter[iet].first / (double)obs_interEventTime_orderParameter[iet].second;
+        //     }
+        // }
+        // CSV::write(directory + NGE, trimmed, precision);
     }
 }  //* End of function mBFW::Generate::save
 

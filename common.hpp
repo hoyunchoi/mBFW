@@ -38,7 +38,7 @@ const std::string fileName::NGE(const int& t_networkSize, const double& t_accept
 }
 
 const std::string fileName::NGES(const int& t_networkSize, const double& t_acceptanceThreshold, const unsigned& t_ensembleSize, const std::string& t_standard, const double& t_repeater, const int& t_coreNum = -1) {
-    const std::string fileName = base(t_networkSize, t_acceptanceThreshold) + ",E" + std::to_string(t_ensembleSize) + "," + t_standard + to_stringWithPrecision(t_repeater, 4);
+    const std::string fileName = base(t_networkSize, t_acceptanceThreshold) + ",E" + std::to_string(t_ensembleSize) + "," + t_standard + to_stringWithPrecision(t_repeater, 6);
     return t_coreNum == -1 ? fileName + ".txt" : fileName + "-" + std::to_string(t_coreNum) + ".txt";
 }
 }  // namespace mBFW

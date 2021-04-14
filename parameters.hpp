@@ -63,6 +63,7 @@ void Parameter::m_set_points() {
     if (m_points.size() != mBFW::pointTypes.size()) {
         std::ofstream ERROR("ERROR.log", std::ios_base::app);
         ERROR << "Problem at reading " << pointFileName << "\n";
+        ERROR.close();
         exit(1);
     }
     return;
@@ -71,7 +72,7 @@ void Parameter::m_set_points() {
 void Parameter::m_set_clusterSizeDist_orderParameter() {
     std::vector<double> extra;
     //* Default values
-    m_clusterSizeDist_orderParameter = linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-4.0, -2.0, 100));
+    m_clusterSizeDist_orderParameter = m_networkSize >= 1280000 ? linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-6.0, -4.0, 100)) : linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-4.0, -2.0, 100));
     extra = linearAlgebra::arange(0.01, 0.99, 0.01);
     m_clusterSizeDist_orderParameter.insert(m_clusterSizeDist_orderParameter.end(), extra.begin(), extra.end());
 
