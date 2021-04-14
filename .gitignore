@@ -184,3 +184,5 @@ Paper Graph.ipynb
 *copy*
 spgRun.sh
 *.ipynb
+data/*
+fig/*
