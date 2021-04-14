@@ -1,14 +1,16 @@
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "../library/linearAlgebra.hpp"
+
+//*-------------------------
+#include <fstream>
+#include "linearAlgebra.hpp"
 #include "common.hpp"
+//*-------------------------
 
 namespace mBFW {
 struct Parameter {
@@ -39,6 +41,7 @@ struct Parameter {
     const std::set<int> m_doubleVec2intSet(const std::vector<double>&) const;
 };
 
+
 Parameter::Parameter(const int& t_networkSize, const double& t_acceptanceThreshold) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold) {
     m_set_points();
     m_set_clusterSizeDist_orderParameter();
@@ -52,37 +55,18 @@ void Parameter::m_set_points() {
     std::ifstream readFile(pointFileName);
     std::string line;
     while (getline(readFile, line)) {
-        for (const std::string& type : mBFW::pointTypes){
-            if (line.find(type) != line.npos){
+        for (const std::string& type : mBFW::pointTypes) {
+            if (line.find(type) != line.npos) {
                 m_points[type] = std::stod(line.substr(line.find(": ") + 2));
             }
         }
-
-
-        // //* Find line for each points
-        // if (line.find("t_a") != line.npos) {
-        //     m_points["t_a"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("m_a") != line.npos) {
-        //     m_points["m_a"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("inf_ta") != line.npos){
-        //     m_points["t_a2"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("inf_ma") != line.npos){
-        //     m_points["m_a2"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("t_g") != line.npos) {
-        //     m_points["t_b"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("m_g") != line.npos) {
-        //     m_points["m_b"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("t_c_csd") != line.npos) {
-        //     m_points["t_c"] = std::stod(line.substr(line.find(": ") + 2));
-        // } else if (line.find("m_c_csd") != line.npos) {
-        //     m_points["m_c"] = std::stod(line.substr(line.find(": ") + 2));
-        // }
     }
 
     //* Check if every points are set
     if (m_points.size() != mBFW::pointTypes.size()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << "Problem at reading " << pointFileName << "\n";
+        ERROR.close();
         exit(1);
     }
     return;
@@ -91,7 +75,7 @@ void Parameter::m_set_points() {
 void Parameter::m_set_clusterSizeDist_orderParameter() {
     std::vector<double> extra;
     //* Default values
-    m_clusterSizeDist_orderParameter = linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-4.0, -2.0, 100));
+    m_clusterSizeDist_orderParameter = m_networkSize >= 1280000 ? linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-6.0, -4.0, 100)) : linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-4.0, -2.0, 100));
     extra = linearAlgebra::arange(0.01, 0.99, 0.01);
     m_clusterSizeDist_orderParameter.insert(m_clusterSizeDist_orderParameter.end(), extra.begin(), extra.end());
 
@@ -226,5 +210,6 @@ const std::set<int> Parameter::get_clusterSizeDist_time() const {
 const std::set<int> Parameter::get_orderParameterDist_time() const {
     return m_doubleVec2intSet(m_orderParameterDist_time);
 }
+
 
 }  // namespace mBFW

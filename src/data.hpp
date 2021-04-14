@@ -7,8 +7,8 @@
 #include <tuple>
 #include <vector>
 
-#include "../library/CSV.hpp"
-#include "../library/linearAlgebra.hpp"
+#include "CSV.hpp"
+#include "linearAlgebra.hpp"
 #include "common.hpp"
 
 
@@ -35,13 +35,12 @@ struct Data {
     template <typename T, typename TT>
     void discreteAverage(const std::string&, const std::map<T, TT>&) const;
 
+    void temp(const std::string& ) const ;
    protected:
     //* Directory and fild handling
     const std::string m_defineAdditionalDirectory(const std::string&, const std::string&) const;
     const std::set<std::string> m_findTargetFileNameList(const std::string&, const std::string&) const;
     const unsigned m_extractEnsemble(const std::string&) const;
-    const double m_extractRepeater(const std::string&, const std::string&, const unsigned&) const;
-    const std::set<double> m_extractRepeaterList(const std::set<std::string>&, const std::string&, const unsigned&) const;
     void m_conditionallyDeleteFile(const std::string&) const;
 
     //* Data handling
@@ -120,18 +119,6 @@ const unsigned Data::m_extractEnsemble(const std::string& t_fileName) const {
     return std::stoul(temp);
 }
 
-const double Data::m_extractRepeater(const std::string& t_fileName, const std::string& t_standard, const unsigned& t_standardSize = 6) const {
-    return std::stod(t_fileName.substr(t_fileName.find(t_standard) + t_standard.size(), t_standardSize));
-}
-
-const std::set<double> Data::m_extractRepeaterList(const std::set<std::string>& t_fileNameList, const std::string& t_standard, const unsigned& t_standardSize = 6) const {
-    std::set<double> repeaterList;
-    for (const auto& fileName : t_fileNameList) {
-        repeaterList.emplace(m_extractRepeater(fileName, t_standard, t_standardSize));
-    }
-    return repeaterList;
-}
-
 void Data::m_conditionallyDeleteFile(const std::string& t_deletionFile) const {
     if (m_deletion) {
         std::cout << "Deleting file " << t_deletionFile << "\n";
@@ -191,8 +178,9 @@ void Data::continuousAverage(const std::string& t_type, const T& t_format) const
 
     //* Check the number of files
     if (fileNameList.empty()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "/ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
         std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
@@ -225,8 +213,9 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
 
     //* Check the number of files
     if (fileNameList.empty()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
         std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
@@ -287,10 +276,11 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
         }
     }
 
-    //* Seperate to multiple files containing single repeater
+    //* Get single file directory and file lists
     const std::string singleDirectory = m_defineAdditionalDirectory(directory, "single");
     std::set<std::string> singleFileNameList = m_findTargetFileNameList(singleDirectory, m_target);
 
+    //* Seperate to multiple files containing single repeater
     std::set<std::string> newSingleFileNameList;
     for (const std::pair<int, std::map<int, double>>& single : averageMap) {
         const int repeater = single.first;
@@ -318,6 +308,56 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     return;
 }
 
+void Data::temp(const std::string& t_type) const {
+    //* Define Directories and get target files
+    const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, t_type);
+    std::set<std::string> fileNameList = m_findTargetFileNameList(directory, m_target);
+
+    //* Check the number of files
+    if (fileNameList.size() != 1) {
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
+        ERROR << m_target << ": Check " << directory << "\n";
+        ERROR.close();
+        exit(1);
+    }
+    const std::string totalName = *fileNameList.begin();
+
+    //* Check the standard of input type
+    const std::string standard = t_type == "orderParameterDist" ? "T" : "OP";
+
+    //* Read data
+    std::vector<std::vector<double>> totalData;
+    CSV::read(directory + totalName, totalData);
+
+
+    //* Seperate to multiple files containing single repeater
+    const std::string singleDirectory = m_defineAdditionalDirectory(directory, "single");
+    std::set<std::string> singleFileNameList = m_findTargetFileNameList(singleDirectory, m_target);
+
+    std::set<std::string> newSingleFileNameList;
+    for (const std::vector<double>& single : totalData){
+        const int repeater = (int)single[0];
+        const unsigned ensembleSize = (unsigned)single[1];
+        const std::string newSingleFileName = fileName::NGES(m_networkSize, m_acceptanceThreshold, ensembleSize, standard, repeater/(double)m_networkSize, 0);
+        newSingleFileNameList.emplace(newSingleFileName);
+
+        std::map<int, double> singleData;
+        for (unsigned i=2; i<single.size(); i+=2){
+            singleData[(int)single[i]] = single[i+1];
+        }
+        std::cout << "Writing file " << singleDirectory + newSingleFileName << "\n";
+        CSV::write(singleDirectory + newSingleFileName, singleData, -1);
+    }
+
+    //* Delete old single files if they are updated
+    for (const std::string& singleFileName : singleFileNameList) {
+        if (newSingleFileNameList.find(singleFileName) == newSingleFileNameList.end()) {
+            m_conditionallyDeleteFile(singleDirectory + singleFileName);
+        }
+    }
+
+};
+
 template <typename T, typename TT>
 void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_format) const {
     //* Define directories and target files
@@ -326,8 +366,9 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
 
     //* Check the number of files
     if (fileNameList.empty()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
         std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
