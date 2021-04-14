@@ -15,13 +15,13 @@ int main(int argc, char* argv[]) {
 
     //* Check input network size and acceptance threshold
     if (mBFW::networkSizeList.find(networkSize) == mBFW::networkSizeList.end()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": Not valid network size " << networkSize << "\n";
         ERROR.close();
         return -1;
     }
     if (mBFW::acceptanceThresholdList.find(acceptanceThreshold) == mBFW::acceptanceThresholdList.end()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": Not valid acceptance threshold " << acceptanceThreshold << "\n";
         ERROR.close();
         return -1;
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     //* Check list of each observables
     std::map<std::string, bool> checkList;
     checkList["ageDist"] = false;
-    checkList["clusterSizeDist"] = true;
+    checkList["clusterSizeDist"] = false;
     checkList["deltaUpperBoundDist"] = false;
     checkList["interEventTime"] = false;
     checkList["interEventTimeDist"] = false;
@@ -45,9 +45,9 @@ int main(int argc, char* argv[]) {
     mBFW::Data model(networkSize, acceptanceThreshold);
     // model.run(checkList, deletion);
     model.temp("clusterSizeDist");
-    // model.temp("orderParmeterDist");
+    model.temp("orderParmeterDist");
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
-    std::ofstream logFile("time.log", std::ios_base::app);
+    std::ofstream logFile(mBFW::logDirectory + "/time.log", std::ios_base::app);
     std::cout << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": " << std::setprecision(6) << sec.count() << "seconds\n";
     logFile << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": " << std::setprecision(6) << sec.count() << "seconds\n";
 

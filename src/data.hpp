@@ -7,8 +7,8 @@
 #include <tuple>
 #include <vector>
 
-#include "../library/CSV.hpp"
-#include "../library/linearAlgebra.hpp"
+#include "CSV.hpp"
+#include "linearAlgebra.hpp"
 #include "common.hpp"
 
 
@@ -178,7 +178,7 @@ void Data::continuousAverage(const std::string& t_type, const T& t_format) const
 
     //* Check the number of files
     if (fileNameList.empty()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "/ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
         ERROR.close();
         exit(1);
@@ -213,7 +213,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
 
     //* Check the number of files
     if (fileNameList.empty()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
         ERROR.close();
         exit(1);
@@ -315,7 +315,7 @@ void Data::temp(const std::string& t_type) const {
 
     //* Check the number of files
     if (fileNameList.size() != 1) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << m_target << ": Check " << directory << "\n";
         ERROR.close();
         exit(1);
@@ -358,8 +358,6 @@ void Data::temp(const std::string& t_type) const {
 
 };
 
-
-
 template <typename T, typename TT>
 void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_format) const {
     //* Define directories and target files
@@ -368,7 +366,7 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
 
     //* Check the number of files
     if (fileNameList.empty()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << m_target << ": No file at " << directory << "\n";
         ERROR.close();
         exit(1);

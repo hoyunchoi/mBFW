@@ -41,7 +41,7 @@ struct NZ_Network {
     void merge(const int&, const int&);
     const int getSize(const int&) const;
     const int getSecondMaximumClusterSize() const;
-    const std::map<int, int> getSortedCluster(const int&) const;
+    const std::map<int, int> getSortedCluster(const int& t_excludeNum = 1) const;
     const double getMeanClusterSize() const;
 
    protected:
@@ -49,6 +49,7 @@ struct NZ_Network {
     void m_updateSortedCluster(const int&, const int&);
     void m_updateMaximumClusterSize(const int&);
 };
+
 
 NZ_Network::NZ_Network(const int& t_networkSize) : networkSize(t_networkSize) {
     //* Generate default nodes
@@ -129,7 +130,7 @@ const int NZ_Network::getSecondMaximumClusterSize() const {
     return 1;
 }
 
-const std::map<int, int> NZ_Network::getSortedCluster(const int& excludeNum = 1) const {
+const std::map<int, int> NZ_Network::getSortedCluster(const int& t_excludeNum) const {
     std::map<int, int> result = m_sortedCluster;
 
     //* Exclue maximum cluster
@@ -138,7 +139,7 @@ const std::map<int, int> NZ_Network::getSortedCluster(const int& excludeNum = 1)
         result.erase(maximumClusterSize);
     }
     //* If exclude number = 2, exclude second maximum cluster
-    if (excludeNum == 2) {
+    if (t_excludeNum == 2) {
         --result[getSecondMaximumClusterSize()];
     }
     return result;

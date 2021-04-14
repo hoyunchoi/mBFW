@@ -1,14 +1,16 @@
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "../library/linearAlgebra.hpp"
+
+//*-------------------------
+#include <fstream>
+#include "linearAlgebra.hpp"
 #include "common.hpp"
+//*-------------------------
 
 namespace mBFW {
 struct Parameter {
@@ -39,6 +41,7 @@ struct Parameter {
     const std::set<int> m_doubleVec2intSet(const std::vector<double>&) const;
 };
 
+
 Parameter::Parameter(const int& t_networkSize, const double& t_acceptanceThreshold) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold) {
     m_set_points();
     m_set_clusterSizeDist_orderParameter();
@@ -52,8 +55,8 @@ void Parameter::m_set_points() {
     std::ifstream readFile(pointFileName);
     std::string line;
     while (getline(readFile, line)) {
-        for (const std::string& type : mBFW::pointTypes){
-            if (line.find(type) != line.npos){
+        for (const std::string& type : mBFW::pointTypes) {
+            if (line.find(type) != line.npos) {
                 m_points[type] = std::stod(line.substr(line.find(": ") + 2));
             }
         }
@@ -61,7 +64,7 @@ void Parameter::m_set_points() {
 
     //* Check if every points are set
     if (m_points.size() != mBFW::pointTypes.size()) {
-        std::ofstream ERROR("ERROR.log", std::ios_base::app);
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << "Problem at reading " << pointFileName << "\n";
         ERROR.close();
         exit(1);
@@ -207,5 +210,6 @@ const std::set<int> Parameter::get_clusterSizeDist_time() const {
 const std::set<int> Parameter::get_orderParameterDist_time() const {
     return m_doubleVec2intSet(m_orderParameterDist_time);
 }
+
 
 }  // namespace mBFW

@@ -1,19 +1,24 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>
 #include <map>
 #include <random>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "../library/CSV.hpp"
-#include "../library/linearAlgebra.hpp"
-#include "../library/pcg_random.hpp"
+#include "pcg_random.hpp"
+
+//*-------------------------
+#include <algorithm>
+#include <cmath>
+
+#include "CSV.hpp"
 #include "NZ_Network.hpp"
 #include "common.hpp"
+#include "linearAlgebra.hpp"
 #include "parameters.hpp"
+//*-------------------------
 
 /*
     Observables
@@ -60,7 +65,7 @@ struct Generate {
 
    public:
     Generate() {}
-    Generate(const int&, const double&, const int&, const int&);
+    Generate(const int&, const double&, const int&, const int& t_randomEngineSeed = -1);
 
     //* Member functions
     void run(const unsigned&);
@@ -70,7 +75,8 @@ struct Generate {
     void m_singleRun();
 };
 
-Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold, const int& t_coreNum, const int& t_randomEngineSeed = -1) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold), m_coreNum(t_coreNum) {
+
+Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold, const int& t_coreNum, const int& t_randomEngineSeed) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold), m_coreNum(t_coreNum) {
     //* Get default values from parameter
     mBFW::Parameter parameter(t_networkSize, t_acceptanceThreshold);
     const std::map<std::string, int> points = parameter.get_points();
@@ -185,27 +191,27 @@ void Generate::m_singleRun() {
             }
             //! Second Moment
             {
-                obs_secondMoment[time] += std::pow(orderParameter, 2.0);
+                // obs_secondMoment[time] += std::pow(orderParameter, 2.0);
             }
 
             //! Mean Cluster Size
             {
-                obs_meanClusterSize[time] += network.getMeanClusterSize();
+                // obs_meanClusterSize[time] += network.getMeanClusterSize();
             }
 
             //! Age Distribution
             {
-                for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
-                    obs_ageDist.at(m_state[maximumClusterSize - 1])[changedAge.first] += changedAge.second;
-                }
+                // for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
+                //     obs_ageDist.at(m_state[maximumClusterSize - 1])[changedAge.first] += changedAge.second;
+                // }
             }
 
             //! Order Parameter Distribution
             {
-                if (time == *findingOrderParameterDist.begin()) {
-                    ++obs_orderParameterDist.at(time)[maximumClusterSize];
-                    findingOrderParameterDist.erase(time);
-                }
+                // if (time == *findingOrderParameterDist.begin()) {
+                //     ++obs_orderParameterDist.at(time)[maximumClusterSize];
+                //     findingOrderParameterDist.erase(time);
+                // }
             }
 
             //* Maximum cluster size of network is updated <=> Upper bound of m-BFW model is updated right before
@@ -215,38 +221,38 @@ void Generate::m_singleRun() {
 
                 //! Inter Event Time
                 {
-                    obs_interEventTime[time].first += interEventTime;
-                    ++obs_interEventTime[time].second;
+                    // obs_interEventTime[time].first += interEventTime;
+                    // ++obs_interEventTime[time].second;
                 }
 
                 //! Inter Event Time Distribution
                 {
-                    ++obs_interEventTimeDist.at(m_state[maximumClusterSize - 1])[interEventTime];
+                    // ++obs_interEventTimeDist.at(m_state[maximumClusterSize - 1])[interEventTime];
                 }
 
                 //! Delta Upper Bound Distribution
                 {
-                    ++obs_deltaUpperBoundDist.at(m_state[maximumClusterSize - 1])[deltaMaximumClusterSize];
+                    // ++obs_deltaUpperBoundDist.at(m_state[maximumClusterSize - 1])[deltaMaximumClusterSize];
                 }
 
                 //! Cluster Size Distribution
                 {
-                    findingClusterSizeDist = newFindingClusterSizeDist;
-                    for (const int& op : findingClusterSizeDist) {
-                        if (op < maximumClusterSize) {
-                            const std::map<int, int> sortedCluster = network.getSortedCluster();
-                            for (const std::pair<int, int>& cluster : sortedCluster) {
-                                obs_clusterSizeDist.at(op)[cluster.first] += cluster.second;
-                            }
-                            newFindingClusterSizeDist.erase(op);
-                        }
-                    }
+                    // findingClusterSizeDist = newFindingClusterSizeDist;
+                    // for (const int& op : findingClusterSizeDist) {
+                    //     if (op < maximumClusterSize) {
+                    //         const std::map<int, int> sortedCluster = network.getSortedCluster();
+                    //         for (const std::pair<int, int>& cluster : sortedCluster) {
+                    //             obs_clusterSizeDist.at(op)[cluster.first] += cluster.second;
+                    //         }
+                    //         newFindingClusterSizeDist.erase(op);
+                    //     }
+                    // }
                 }
 
                 //! Inter Event Time - Order Parameter
                 {
-                    obs_interEventTime_orderParameter[interEventTime].first += orderParameter;
-                    ++obs_interEventTime_orderParameter[interEventTime].second;
+                    // obs_interEventTime_orderParameter[interEventTime].first += orderParameter;
+                    // ++obs_interEventTime_orderParameter[interEventTime].second;
                 }
 
                 //* Update event time
@@ -285,10 +291,10 @@ void Generate::save() const {
 
     //! Order Parameter
     {
-        // const std::string directory = dataDirectory + "orderParameter/";
-        // CSV::generateDirectory(directory);
-        // const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
-        // CSV::write(directory + NGE, orderParameter, precision);
+        const std::string directory = dataDirectory + "orderParameter/";
+        CSV::generateDirectory(directory);
+        const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
+        CSV::write(directory + NGE, orderParameter, precision);
     }
 
     //! Second Moment
@@ -323,12 +329,12 @@ void Generate::save() const {
 
     //! Age Distribution
     {
-        for (const std::string& state : mBFW::states) {
-            const std::string directory = dataDirectory + "ageDist/" + state + "/";
-            CSV::generateDirectory(directory);
-            const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
-            CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
-        }
+        // for (const std::string& state : mBFW::states) {
+        //     const std::string directory = dataDirectory + "ageDist/" + state + "/";
+        //     CSV::generateDirectory(directory);
+        //     const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
+        //     CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
+        // }
     }
 
     //! Inter Event Time Distribution
@@ -363,22 +369,22 @@ void Generate::save() const {
 
     //! Cluster Size Distribution
     {
-        const std::string directory = dataDirectory + "clusterSizeDist/";
-        CSV::generateDirectory(directory);
-        std::vector<std::vector<double>> totalData;
-        totalData.reserve(m_clusterSizeDist_orderParameter.size());
-        for (const int& op : m_clusterSizeDist_orderParameter) {
-            std::vector<double> clusterSizeDist;
-            clusterSizeDist.reserve(2 + 2 * obs_clusterSizeDist.at(op).size());
-            clusterSizeDist.emplace_back((double)op);
-            clusterSizeDist.emplace_back((double)m_ensembleSize);
-            for (const std::pair<int, unsigned long long>& csd : obs_clusterSizeDist.at(op)) {
-                clusterSizeDist.emplace_back((double)csd.first);
-                clusterSizeDist.emplace_back(csd.second / (double)m_ensembleSize);
-            }
-            totalData.emplace_back(clusterSizeDist);
-        }
-        CSV::write(directory + NG, totalData, precision);
+        // const std::string directory = dataDirectory + "clusterSizeDist/";
+        // CSV::generateDirectory(directory);
+        // std::vector<std::vector<double>> totalData;
+        // totalData.reserve(m_clusterSizeDist_orderParameter.size());
+        // for (const int& op : m_clusterSizeDist_orderParameter) {
+        //     std::vector<double> clusterSizeDist;
+        //     clusterSizeDist.reserve(2 + 2 * obs_clusterSizeDist.at(op).size());
+        //     clusterSizeDist.emplace_back((double)op);
+        //     clusterSizeDist.emplace_back((double)m_ensembleSize);
+        //     for (const std::pair<int, unsigned long long>& csd : obs_clusterSizeDist.at(op)) {
+        //         clusterSizeDist.emplace_back((double)csd.first);
+        //         clusterSizeDist.emplace_back(csd.second / (double)m_ensembleSize);
+        //     }
+        //     totalData.emplace_back(clusterSizeDist);
+        // }
+        // CSV::write(directory + NG, totalData, precision);
     }
 
     //! Order Parameter Distribution
@@ -414,5 +420,6 @@ void Generate::save() const {
         // CSV::write(directory + NGE, trimmed, precision);
     }
 }  //* End of function mBFW::Generate::save
+
 
 }  // namespace mBFW
