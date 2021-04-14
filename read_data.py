@@ -61,11 +61,11 @@ def __NG__(networkSize, acceptanceThreshold):
 
 
 def __NGT__(networkSize, acceptanceThreshold, t_time):
-    return "N{:.1e},G{:.1f}*,T{:.4f}*-0.txt".format(networkSize, acceptanceThreshold, t_time)
+    return "N{:.1e},G{:.1f}*,T{:.6f}*-0.txt".format(networkSize, acceptanceThreshold, t_time)
 
 
 def __NGOP__(networkSize, acceptanceThreshold, t_orderParameter):
-    return "N{:.1e},G{:.1f}*,OP{:.4f}*-0.txt".format(networkSize, acceptanceThreshold, t_orderParameter)
+    return "N{:.1e},G{:.1f}*,OP{:.6f}*-0.txt".format(networkSize, acceptanceThreshold, t_orderParameter)
 
 
 # * Get the order parameter/time value in directory
