@@ -9,7 +9,6 @@ from dataProcess import *
 
 dataDirectory = "../data/mBFW/"
 states = ["0_A1", "A1_A2", "A2_B", "B_C", "C_1"]
-states_directory = ["0A1", "A1A2", "A2B", "BC", "C1"]
 point_type = ["t_a1", "m_a1", "t_a2", "m_a2", "t_b", "m_b", "t_c", "m_c", "t_inflection", "m_inflection"]
 observables = set()
 observables.add("points")
@@ -36,8 +35,8 @@ for observable in observables:
         absolutePathList[observable] = dataDirectory + observable + "/single/"
     elif "Dist" in observable:
         absolutePathList[observable] = {}
-        for state,directory in zip(states, states_directory):
-            absolutePathList[observable][state] = dataDirectory + observable + "/" + directory + "/"
+        for state in states:
+            absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
     else:
         absolutePathList[observable] = dataDirectory + observable + "/"
 

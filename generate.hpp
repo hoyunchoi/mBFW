@@ -41,7 +41,8 @@ struct Generate {
     int m_coreNum;
     pcg32 m_randomEngine;
     std::uniform_int_distribution<int> m_nodeDistribution;
-    std::map<std::string, int> m_points;
+    std::vector<std::string> m_state;
+    std::vector<std::string> m_state_time;
     std::set<int> m_clusterSizeDist_orderParameter;
     std::set<int> m_orderParameterDist_time;
 
@@ -66,21 +67,55 @@ struct Generate {
     void save() const;
 
    protected:
-    const std::string m_getState(const int&) const;
-    const std::string m_getState_time(const int&) const;
     void m_singleRun();
 };
 
 Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold, const int& t_coreNum, const int& t_randomEngineSeed = -1) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold), m_coreNum(t_coreNum) {
     //* Get default values from parameter
     mBFW::Parameter parameter(t_networkSize, t_acceptanceThreshold);
-    m_points = parameter.get_points();
+    const std::map<std::string, int> points = parameter.get_points();
     m_clusterSizeDist_orderParameter = parameter.get_clusterSizeDist_orderParameter();
     m_orderParameterDist_time = parameter.get_orderParameterDist_time();
 
     //* Initialize random variables
     t_randomEngineSeed == -1 ? m_randomEngine.seed((std::random_device())()) : m_randomEngine.seed(t_randomEngineSeed);
     m_nodeDistribution.param(std::uniform_int_distribution<int>::param_type(0, t_networkSize - 1));
+
+    //* Initialize state vectors using points
+    m_state.resize(t_networkSize);
+    m_state_time.resize(t_networkSize);
+    {
+        for (int m = 0; m < points.at("m_a1"); ++m) {
+            m_state[m] = "0_A1";
+        }
+        for (int m = points.at("m_a1"); m < points.at("m_a2"); ++m) {
+            m_state[m] = "A1_A2";
+        }
+        for (int m = points.at("m_a2"); m < points.at("m_b"); ++m) {
+            m_state[m] = "A2_B";
+        }
+        for (int m = points.at("m_b"); m < points.at("m_c"); ++m) {
+            m_state[m] = "B_C";
+        }
+        for (int m = points.at("m_c"); m < t_networkSize; ++m) {
+            m_state[m] = "C_1";
+        }
+        for (int m = 0; m < points.at("m_a1"); ++m) {
+            m_state[m] = "0_A1";
+        }
+        for (int t = points.at("t_a1"); t < points.at("t_a2"); ++t) {
+            m_state_time[t] = "A1_A2";
+        }
+        for (int t = points.at("t_a2"); t < points.at("t_b"); ++t) {
+            m_state_time[t] = "A2_B";
+        }
+        for (int t = points.at("t_b"); t < points.at("t_c"); ++t) {
+            m_state_time[t] = "B_C";
+        }
+        for (int t = points.at("t_c"); t < t_networkSize; ++t) {
+            m_state_time[t] = "C_1";
+        }
+    }
 
     //* Initialize observables
     obs_orderParameter.assign(t_networkSize, 0.0);
@@ -103,34 +138,6 @@ Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold
     obs_interEventTime_orderParameter.assign(t_networkSize, std::pair<double, unsigned>{0.0, 0});
 }
 
-const std::string Generate::m_getState(const int& t_maximumClusterSize) const {
-    if (t_maximumClusterSize < m_points.at("m_a1")) {
-        return "0A1";
-    } else if (t_maximumClusterSize < m_points.at("m_a2")){
-        return "A1A2";
-    } else if (t_maximumClusterSize < m_points.at("m_b")) {
-        return "A2B";
-    } else if (t_maximumClusterSize < m_points.at("m_c")) {
-        return "BC";
-    } else {
-        return "C1";
-    }
-}
-
-const std::string Generate::m_getState_time(const int& t_time) const {
-    if (t_time < m_points.at("t_a1")) {
-        return "0A1";
-    } else if (t_time < m_points.at("t_a2")){
-        return "A1A2";
-    } else if (t_time < m_points.at("t_b")) {
-        return "A2B";
-    } else if (t_time < m_points.at("t_c")) {
-        return "BC";
-    } else {
-        return "C1";
-    }
-}
-
 void Generate::m_singleRun() {
     //* Initialize for single ensemble
     NZ_Network network(m_networkSize);
@@ -140,8 +147,6 @@ void Generate::m_singleRun() {
     int upperBound = 2;
     bool findNewLink = true;
     int root1, root2, newSize;
-    std::string state = "0A1";
-    std::string state_time = "0A1";
     std::set<int> findingClusterSizeDist = m_clusterSizeDist_orderParameter;
     std::set<int> newFindingClusterSizeDist = m_clusterSizeDist_orderParameter;
     std::set<int> findingOrderParameterDist = m_orderParameterDist_time;
@@ -168,7 +173,6 @@ void Generate::m_singleRun() {
             ++time;
             ++trialTime;
             findNewLink = true;
-            state_time = m_getState_time(time);
 
             //* Get basic data from network
             const int maximumClusterSize = network.maximumClusterSize;
@@ -192,7 +196,7 @@ void Generate::m_singleRun() {
             //! Age Distribution
             {
                 for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
-                    obs_ageDist.at(state)[changedAge.first] += changedAge.second;
+                    obs_ageDist.at(m_state[maximumClusterSize - 1])[changedAge.first] += changedAge.second;
                 }
             }
 
@@ -206,7 +210,6 @@ void Generate::m_singleRun() {
 
             //* Maximum cluster size of network is updated <=> Upper bound of m-BFW model is updated right before
             if (deltaMaximumClusterSize && time >= 2) {
-                state = m_getState(maximumClusterSize);
                 //* Get basic data
                 const int interEventTime = time - eventTime;
 
@@ -218,12 +221,12 @@ void Generate::m_singleRun() {
 
                 //! Inter Event Time Distribution
                 {
-                    ++obs_interEventTimeDist.at(state)[interEventTime];
+                    ++obs_interEventTimeDist.at(m_state[maximumClusterSize - 1])[interEventTime];
                 }
 
                 //! Delta Upper Bound Distribution
                 {
-                    ++obs_deltaUpperBoundDist.at(state)[deltaMaximumClusterSize];
+                    ++obs_deltaUpperBoundDist.at(m_state[maximumClusterSize - 1])[deltaMaximumClusterSize];
                 }
 
                 //! Cluster Size Distribution
@@ -320,12 +323,12 @@ void Generate::save() const {
 
     //! Age Distribution
     {
-        // for (const std::string& state : mBFW::states) {
-        //     const std::string directory = dataDirectory + "ageDist/" + state + "/";
-        //     CSV::generateDirectory(directory);
-        //     const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
-        //     CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
-        // }
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "ageDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
+            CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
+        }
     }
 
     //! Inter Event Time Distribution

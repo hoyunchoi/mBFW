@@ -37,11 +37,8 @@ int main(int argc, char* argv[]) {
     //* Generate and Run mBFW::Generate model
     const auto start = std::chrono::system_clock::now();
     mBFW::Generate model(networkSize, acceptanceThreshold, coreNum, randomEngineSeed);
-    std::cout << "temp1\n";
     model.run(ensembleSize);
-    std::cout << "temp2\n";
     model.save();
-    std::cout << "temp3\n";
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
     std::ofstream logFile("time.log", std::ios_base::app);
     logFile << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": " << std::setprecision(6) << sec.count() << "seconds\n";

@@ -8,7 +8,7 @@
 
 namespace mBFW {
 const std::string dataDirectory = "../data/mBFW/";
-const std::vector<std::string> states = {"0A1", "A1A2", "A2B", "BC", "C1"};
+const std::vector<std::string> states = {"0_A1", "A1_A2", "A2_B", "B_C", "C_1"};
 const std::vector<std::string> pointTypes = {"m_a1", "m_a2", "m_b", "m_c", "m_inflection", "t_a1", "t_a2", "t_b", "t_c", "t_inflection"};
 const std::set<int> networkSizeList = {10000, 20000, 40000, 80000, 160000, 320000, 640000, 1280000, 2560000, 5120000, 10240000};
 const std::set<double> acceptanceThresholdList = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};

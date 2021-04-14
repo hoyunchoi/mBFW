@@ -29,21 +29,23 @@ int main(int argc, char* argv[]) {
 
     //* Check list of each observables
     std::map<std::string, bool> checkList;
-    checkList["ageDist"] = true;
+    checkList["ageDist"] = false;
     checkList["clusterSizeDist"] = true;
-    checkList["deltaUpperBoundDist"] = true;
-    checkList["interEventTime"] = true;
-    checkList["interEventTimeDist"] = true;
-    checkList["interEventTime_orderParameter"] = true;
-    checkList["meanClusterSize"] = true;
-    checkList["orderParameter"] = true;
-    checkList["orderParameterDist"] = true;
-    checkList["orderParameterVariance"] = true;
+    checkList["deltaUpperBoundDist"] = false;
+    checkList["interEventTime"] = false;
+    checkList["interEventTimeDist"] = false;
+    checkList["interEventTime_orderParameter"] = false;
+    checkList["meanClusterSize"] = false;
+    checkList["orderParameter"] = false;
+    checkList["orderParameterDist"] = false;
+    checkList["orderParameterVariance"] = false;
 
     //* Generate and Run mBFW::data model
     auto start = std::chrono::system_clock::now();
     mBFW::Data model(networkSize, acceptanceThreshold);
-    model.run(checkList, deletion);
+    // model.run(checkList, deletion);
+    model.temp("clusterSizeDist");
+    // model.temp("orderParmeterDist");
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
     std::ofstream logFile("time.log", std::ios_base::app);
     std::cout << mBFW::fileName::NG(networkSize, acceptanceThreshold) << ": " << std::setprecision(6) << sec.count() << "seconds\n";
