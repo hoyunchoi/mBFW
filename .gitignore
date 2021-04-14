@@ -183,3 +183,4 @@ test.*
 Paper Graph.ipynb
 *copy*
 spgRun.sh
+*.ipynb
