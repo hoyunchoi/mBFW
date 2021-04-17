@@ -86,6 +86,9 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     if (t_checkList.at("orderParameter")) {
         continuousAverage("orderParameter", std::vector<double>{});
     }
+    if (t_checkList.at("orderParameter_interEventTime")){
+        discreteAverage("orderParameter_interEventTime", std::map<int, double>{});
+    }
     if (t_checkList.at("orderParameterDist")) {
         continuousAverage_repeater("orderParameterDist");
     }

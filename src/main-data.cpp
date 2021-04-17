@@ -5,10 +5,6 @@
 #include "data.hpp"
 
 int main(int argc, char* argv[]) {
-    std::ios_base::sync_with_stdio(false);
-    std::cin.tie(NULL);
-    std::cout.tie(NULL);
-
     const int networkSize = std::stoi(argv[1]);
     const double acceptanceThreshold = std::stod(argv[2]);
     const bool deletion = true;
@@ -30,16 +26,17 @@ int main(int argc, char* argv[]) {
 
     //* Check list of each observables
     std::map<std::string, bool> checkList;
-    checkList["ageDist"] = false;
-    checkList["clusterSizeDist"] = false;
-    checkList["deltaUpperBoundDist"] = false;
-    checkList["interEventTime"] = false;
-    checkList["interEventTimeDist"] = false;
-    checkList["interEventTime_orderParameter"] = false;
-    checkList["meanClusterSize"] = false;
-    checkList["orderParameter"] = false;
+    checkList["ageDist"] = true;
+    checkList["clusterSizeDist"] = true;
+    checkList["deltaUpperBoundDist"] = true;
+    checkList["interEventTime"] = true;
+    checkList["interEventTimeDist"] = true;
+    checkList["interEventTime_orderParameter"] = true;
+    checkList["meanClusterSize"] = true;
+    checkList["orderParameter"] = true;
+    checkList["orderParameter_interEventTime"] = true;
     checkList["orderParameterDist"] = false;
-    checkList["orderParameterVariance"] = false;
+    checkList["orderParameterVariance"] = true;
 
     //* Generate and Run mBFW::data model
     auto start = std::chrono::system_clock::now();

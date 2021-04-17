@@ -1,5 +1,4 @@
 import sys
-from numpy.core.fromnumeric import repeat
 sys.path.append("../library/")
 import pandas as pd
 import glob
@@ -7,27 +6,31 @@ import numpy as np
 from dataProcess import *
 
 
-dataDirectory = "../data/mBFW/"
+dataDirectory = "../data/"
 states = ["0_A1", "A1_A2", "A2_B", "B_C", "C_1"]
 point_type = ["t_a1", "m_a1", "t_a2", "m_a2", "t_b", "m_b", "t_c", "m_c", "t_inflection", "m_inflection"]
 observables = set()
 observables.add("points")
 
+#* Plain observables
 observables.add("orderParameter")
 observables.add("meanClusterSize")
 observables.add("orderParameterVariance")
 observables.add("interEventTime")
 
 #* Observables distinguished by intervals
-# for state in states:
 observables.add("ageDist")
 observables.add("interEventTimeDist")
 observables.add("deltaUpperBoundDist")
 
+#* Observables with repeater
 observables.add("clusterSizeDist")
 observables.add("orderParameterDist")
 
+#* X_Y
 observables.add("interEventTime_orderParameter")
+observables.add("orderParameter_interEventTime")
+
 
 absolutePathList = {}
 for observable in observables:

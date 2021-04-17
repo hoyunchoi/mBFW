@@ -181,6 +181,7 @@ log/*
 test.*
 Paper Graph.ipynb
 *copy*
-spgRun.sh
+run.sh
 data/*
 fig/*
+text*.txt
