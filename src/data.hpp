@@ -8,9 +8,8 @@
 #include <vector>
 
 #include "CSV.hpp"
-#include "linearAlgebra.hpp"
 #include "common.hpp"
-
+#include "linearAlgebra.hpp"
 
 namespace mBFW {
 struct Data {
@@ -34,6 +33,8 @@ struct Data {
 
     template <typename T, typename TT>
     void discreteAverage(const std::string&, const std::map<T, TT>&) const;
+
+    void netOrderParameter() const;
 
    protected:
     //* Directory and fild handling
@@ -82,10 +83,13 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     if (t_checkList.at("meanClusterSize")) {
         continuousAverage("meanClusterSize", std::vector<double>{});
     }
+    if (t_checkList.at("netOrderParameter")) {
+        netOrderParameter();
+    }
     if (t_checkList.at("orderParameter")) {
         continuousAverage("orderParameter", std::vector<double>{});
     }
-    if (t_checkList.at("orderParameter_interEventTime")){
+    if (t_checkList.at("orderParameter_interEventTime")) {
         discreteAverage("orderParameter_interEventTime", std::map<int, double>{});
     }
     if (t_checkList.at("orderParameterDist")) {
@@ -122,7 +126,7 @@ const unsigned Data::m_extractEnsemble(const std::string& t_fileName) const {
 
 void Data::m_conditionallyDeleteFile(const std::string& t_deletionFile) const {
     if (m_deletion) {
-        if (m_writeLog){
+        if (m_writeLog) {
             std::cout << "Deleting file " << t_deletionFile << "\n";
         }
         CSV::deleteFile(t_deletionFile);
@@ -146,6 +150,7 @@ std::tuple<T, unsigned> Data::m_continuousAvgFile(const std::string& t_directory
     return std::make_tuple(average, totalEnsemble);
 }
 
+//? T=std::pair<int,unsigned>, TT=double
 template <typename T, typename TT>
 std::tuple<std::map<T, TT>, unsigned> Data::m_discreteAvgFile(const std::string& t_directory, const std::set<std::string>& t_fileNameList, const std::map<T, TT>& t_format) const {
     unsigned totalEnsemble = 0;
@@ -166,7 +171,7 @@ std::tuple<std::map<T, TT>, unsigned> Data::m_discreteAvgFile(const std::string&
     std::map<T, TT> average;
     for (const std::string& fileName : t_fileNameList) {
         const unsigned ensemble = m_extractEnsemble(fileName);
-        for (const std::pair<T, TT>& e : totalData.at(fileName)){
+        for (const std::pair<T, TT>& e : totalData.at(fileName)) {
             average[e.first] += e.second * (double)ensemble / totalEnsembleMap.at(e.first);
         }
     }
@@ -186,7 +191,7 @@ void Data::continuousAverage(const std::string& t_type, const T& t_format) const
         ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
-        if (m_writeLog){
+        if (m_writeLog) {
             std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
         }
         return;
@@ -197,7 +202,7 @@ void Data::continuousAverage(const std::string& t_type, const T& t_format) const
 
     //* Write the file
     const std::string newFileName = fileName::NGE(m_networkSize, m_acceptanceThreshold, totalEnsemble, 0);
-    if (m_writeLog){
+    if (m_writeLog) {
         std::cout << "Writing file " << directory + newFileName << "\n";
     }
     CSV::write(directory + newFileName, average, -1);
@@ -225,7 +230,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
         ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
-        if (m_writeLog){
+        if (m_writeLog) {
             std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
         }
         return;
@@ -251,7 +256,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     for (const std::string& fileName : fileNameList) {
         for (const std::vector<double>& data : totalData.at(fileName)) {
             const int repeater = (int)data[0];
-            const double ratio = data[1] / (double)totalEnsembleMap[repeater];
+            const double ratio = data[1] / (double)totalEnsembleMap.at(repeater);
             for (unsigned i = 2; i < data.size(); i += 2) {
                 averageMap[repeater][(int)data[i]] += data[i + 1] * ratio;
             }
@@ -275,7 +280,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
 
     //* Write the file
     const std::string newFileName = fileName::NG(m_networkSize, m_acceptanceThreshold, 0);
-    if (m_writeLog){
+    if (m_writeLog) {
         std::cout << "Writing file " << directory + newFileName << "\n";
     }
     CSV::write(directory + newFileName, average, -1);
@@ -296,16 +301,16 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     for (const std::pair<int, std::map<int, double>>& single : averageMap) {
         const int repeater = single.first;
         const unsigned totalEnsemble = totalEnsembleMap.at(repeater);
-        const std::string newSingleFileName = fileName::NGES(m_networkSize, m_acceptanceThreshold, totalEnsemble, standard, repeater/(double)m_networkSize, 0);
+        const std::string newSingleFileName = fileName::NGES(m_networkSize, m_acceptanceThreshold, totalEnsemble, standard, repeater / (double)m_networkSize, 0);
         newSingleFileNameList.emplace(newSingleFileName);
 
         if (singleFileNameList.find(newSingleFileName) != singleFileNameList.end()) {
-            if (m_writeLog){
+            if (m_writeLog) {
                 std::cout << "Passing file " << singleDirectory + newSingleFileName << "\n";
             }
             continue;
         } else {
-            if (m_writeLog){
+            if (m_writeLog) {
                 std::cout << "Writing file " << singleDirectory + newSingleFileName << "\n";
             }
             CSV::write(singleDirectory + newSingleFileName, single.second, -1);
@@ -336,7 +341,7 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
         ERROR.close();
         exit(1);
     } else if (fileNameList.size() == 1) {
-        if (m_writeLog){
+        if (m_writeLog) {
             std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
         }
         return;
@@ -347,19 +352,75 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
 
     //* Write the file
     const std::string newFileName = fileName::NGE(m_networkSize, m_acceptanceThreshold, totalEnsembleSize, 0);
-    if (m_writeLog){
+    if (m_writeLog) {
         std::cout << "Writing file " << directory + newFileName << "\n";
     }
     CSV::write(directory + newFileName, average, -1);
 
     //* Delete previous averaged and trimmed data after successfully writing
     for (const std::string& fileName : fileNameList) {
-        if (fileName != newFileName){
+        if (fileName != newFileName) {
             m_conditionallyDeleteFile(directory + fileName);
         }
     }
 
     //* void return
+    return;
+}
+
+void Data::netOrderParameter() const {
+    //* Define directories and target files
+    const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, "netOrderParameter");
+    const std::set<std::string> fileNameList = m_findTargetFileNameList(directory, m_target);
+
+    //* Check the number of files
+    if (fileNameList.empty()) {
+        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
+        ERROR << m_target << ": No file at " << directory << "\n";
+        ERROR.close();
+        exit(1);
+    } else if (fileNameList.size() == 1) {
+        if (m_writeLog) {
+            std::cout << "Passing file " << directory + *fileNameList.begin() << "\n";
+        }
+        return;
+    }
+
+    //* Get total ensemble size for each time
+    std::map<std::string, std::vector<std::vector<double>>> totalData;
+    std::map<int, unsigned> totalEnsembleMap;
+    for (const std::string& fileName : fileNameList) {
+        std::vector<std::vector<double>> temp;
+        CSV::read(directory + fileName, temp);
+        totalData[fileName] = temp;
+        for (const std::vector<double>& data : temp) {
+            totalEnsembleMap[(int)data[0]] += (unsigned)data[1];
+        }
+    }
+
+    //* Average for each time
+    std::map<std::pair<int, unsigned>, double> average;
+    for (const std::string& fileName : fileNameList){
+        for (const std::vector<double>& data : totalData.at(fileName)){
+            const int time = (int)data[0];
+            const double ratio = data[1] / (double)totalEnsembleMap.at(time);
+            average[std::pair<int, unsigned>{time, totalEnsembleMap.at(time)}] += data[2] * ratio;
+        }
+    }
+
+    //* Write the file
+    const std::string newFileName = fileName::NG(m_networkSize, m_acceptanceThreshold, 0);
+    if (m_writeLog){
+        std::cout << "Writing file " << directory + newFileName << "\n";
+    }
+    CSV::write(directory + newFileName, average, -1);
+
+    //* Delete previous averaged and trimmed data after successfully writing
+    for (const std::string& fileName : fileNameList){
+        if (fileName != newFileName){
+            m_conditionallyDeleteFile(directory + fileName);
+        }
+    }
     return;
 }
 }  // namespace mBFW

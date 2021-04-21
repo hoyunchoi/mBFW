@@ -27,17 +27,18 @@ int main(int argc, char* argv[]) {
 
     //* Check list of each observables
     std::map<std::string, bool> checkList;
-    checkList["ageDist"] = true;
-    checkList["clusterSizeDist"] = true;
-    checkList["deltaUpperBoundDist"] = true;
-    checkList["interEventTime"] = true;
-    checkList["interEventTimeDist"] = true;
-    checkList["interEventTime_orderParameter"] = true;
-    checkList["meanClusterSize"] = true;
-    checkList["orderParameter"] = true;
-    checkList["orderParameter_interEventTime"] = true;
+    checkList["ageDist"] = false;
+    checkList["clusterSizeDist"] = false;
+    checkList["deltaUpperBoundDist"] = false;
+    checkList["interEventTime"] = false;
+    checkList["interEventTimeDist"] = false;
+    checkList["interEventTime_orderParameter"] = false;
+    checkList["meanClusterSize"] = false;
+    checkList["netOrderParameter"] = true;
+    checkList["orderParameter"] = false;
+    checkList["orderParameter_interEventTime"] = false;
     checkList["orderParameterDist"] = false;
-    checkList["orderParameterVariance"] = true;
+    checkList["orderParameterVariance"] = false;
 
     //* Generate and Run mBFW::data model
     auto start = std::chrono::system_clock::now();
