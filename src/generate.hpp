@@ -26,6 +26,7 @@
     obs_secondMoment[t] : Second moment (op^2) at time t
     obs_meanClusterSize[t] : Mean cluster size (of finite clusters) at time t
     obs_interEventTime[t] : Inter event time finished at time t, sample number
+    obs_netOrderParameter[t] : Order Parameter greater than m_c
 
     obs_ageDist["state"][age] : Number of age accumulated at interval "state"
     obs_interEventTimeDist["state"][iet] : Number of inter event time accumulated through interval "state"
@@ -56,6 +57,7 @@ struct Generate {
     std::vector<double> obs_orderParameter;
     std::vector<double> obs_secondMoment;
     std::vector<double> obs_meanClusterSize;
+    std::map<std::pair<double, unsigned>> obs_netOrderParameter;
     std::vector<std::pair<unsigned, unsigned>> obs_interEventTime;
     std::map<std::string, std::vector<unsigned long long>> obs_ageDist;
     std::map<std::string, std::vector<unsigned>> obs_interEventTimeDist;
