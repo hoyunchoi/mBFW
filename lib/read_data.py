@@ -17,6 +17,7 @@ observables.add("orderParameter")
 observables.add("meanClusterSize")
 observables.add("orderParameterVariance")
 observables.add("interEventTime")
+observables.add("netOrderParameter")
 
 #* Observables distinguished by intervals
 observables.add("ageDist")
