@@ -41,6 +41,10 @@ for observable in observables:
         absolutePathList[observable] = {}
         for state in states:
             absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
+    elif observable == "netOrderParameter":
+        absolutePathList[observable] = {}
+        for state in ["sub", "super"]:
+            absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
     else:
         absolutePathList[observable] = dataDirectory + observable + "/"
 
@@ -104,13 +108,16 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
     # * Read time-accumulated distributions
     if type == "orderParameterDist":
         file = glob.glob(absolutePathList[type] + __NGT__(networkSize, acceptanceThreshold, repeater))
-
     # * Read orderparameter-accumulated distributions
     elif type == "clusterSizeDist":
         file = glob.glob(absolutePathList[type] + __NGOP__(networkSize, acceptanceThreshold, repeater))
 
     # * Read distribution
     elif "Dist" in type:
+        file = glob.glob(absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
+
+    #* Read net order parameter
+    elif type == "netOrderParameter":
         file = glob.glob(absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
 
     # * Read general data
@@ -121,7 +128,11 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
     if (len(file) != 1):
         print("There is problem at reading " + file[0])
         return
-    return readCSV(file[0])
+    if type == "netOrderParameter":
+        net_t, _, net_op = readCSV(file[0])
+        return net_t, net_op
+    else:
+        return readCSV(file[0])
 
 
 def opList2tList(orderParameter, opList):

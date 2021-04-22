@@ -29,5 +29,5 @@ build
 
 #* Run
 cd ${binDir}
-./${name} ${networkSize} ${g} ${ensembleSize} ${coreNum}
+./${name} ${networkSize} ${g} ${ensembleSize} ${coreNum} >> ../log/generate.log
 rm ${name}

@@ -34,7 +34,7 @@ struct Data {
     template <typename T, typename TT>
     void discreteAverage(const std::string&, const std::map<T, TT>&) const;
 
-    void netOrderParameter() const;
+    void netOrderParameter(const std::string&) const;
 
    protected:
     //* Directory and fild handling
@@ -84,7 +84,9 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
         continuousAverage("meanClusterSize", std::vector<double>{});
     }
     if (t_checkList.at("netOrderParameter")) {
-        netOrderParameter();
+        for (const std::string& state : std::set<std::string>{"sub", "super"}){
+            netOrderParameter("netOrderParameter/" + state);
+        }
     }
     if (t_checkList.at("orderParameter")) {
         continuousAverage("orderParameter", std::vector<double>{});
@@ -368,9 +370,9 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
     return;
 }
 
-void Data::netOrderParameter() const {
+void Data::netOrderParameter(const std::string& t_type) const {
     //* Define directories and target files
-    const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, "netOrderParameter");
+    const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, t_type);
     const std::set<std::string> fileNameList = m_findTargetFileNameList(directory, m_target);
 
     //* Check the number of files

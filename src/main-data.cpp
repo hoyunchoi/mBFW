@@ -4,7 +4,6 @@
 #include "common.hpp"
 #include "data.hpp"
 
-//? Test
 int main(int argc, char* argv[]) {
     const int networkSize = std::stoi(argv[1]);
     const double acceptanceThreshold = std::stod(argv[2]);
