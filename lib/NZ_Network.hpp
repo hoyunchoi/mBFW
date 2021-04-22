@@ -83,13 +83,13 @@ void NZ_Network::m_updateAge(const int& t_root1, const int& t_size1, const int& 
 
 void NZ_Network::m_updateSortedCluster(const int& t_size1, const int& t_size2) {
     --m_sortedCluster[t_size1];
-    if (!m_sortedCluster[t_size1]) {
-        m_sortedCluster.erase(t_size1);
-    }
+    // if (!m_sortedCluster[t_size1]) {
+    //     m_sortedCluster.erase(t_size1);
+    // }
     --m_sortedCluster[t_size2];
-    if (!m_sortedCluster[t_size2]) {
-        m_sortedCluster.erase(t_size2);
-    }
+    // if (!m_sortedCluster[t_size2]) {
+    //     m_sortedCluster.erase(t_size2);
+    // }
     ++m_sortedCluster[t_size1 + t_size2];
 }
 
@@ -135,13 +135,18 @@ const std::map<int, int> NZ_Network::getSortedCluster(const int& t_excludeNum) c
 
     //* Exclue maximum cluster
     --result[maximumClusterSize];
-    if (!result[maximumClusterSize]) {
-        result.erase(maximumClusterSize);
-    }
+    // if (!result[maximumClusterSize]) {
+    //     result.erase(maximumClusterSize);
+    // }
     //* If exclude number = 2, exclude second maximum cluster
     if (t_excludeNum == 2) {
         --result[getSecondMaximumClusterSize()];
     }
+
+    for (auto it=result.begin(); it!= result.end(); ){
+        it->second ? ++it : result.erase(it++);
+    }
+
     return result;
 }
 
