@@ -27,6 +27,7 @@
     obs_meanClusterSize[t] : Mean cluster size (of finite clusters) at time t
     obs_interEventTime[t] : Inter event time finished at time t, sample number
     obs_netOrderParameter[t] : Order Parameter greater than m_c
+    obs_singleOrderParameter[ensemble][op] : ordre parameter for single ensemble
 
     obs_ageDist["state"][age] : Number of age accumulated at interval "state"
     obs_interEventTimeDist["state"][iet] : Number of inter event time accumulated through interval "state"
@@ -60,6 +61,7 @@ struct Generate {
     std::vector<double> obs_secondMoment;
     std::vector<double> obs_meanClusterSize;
     std::map<std::string, std::vector<std::pair<double, unsigned>>> obs_netOrderParameter;
+    std::vector<std::vector<double>> obs_singleOrderParameter;
     std::vector<std::pair<unsigned, unsigned>> obs_interEventTime;
     std::map<std::string, std::vector<unsigned long long>> obs_ageDist;
     std::map<std::string, std::vector<unsigned>> obs_interEventTimeDist;
@@ -172,11 +174,13 @@ void Generate::m_singleRun() {
     std::set<int> findingClusterSizeDist = m_clusterSizeDist_orderParameter;
     std::set<int> newFindingClusterSizeDist = m_clusterSizeDist_orderParameter;
     std::set<int> findingOrderParameterDist = m_orderParameterDist_time;
+    std::vector<double> orderParameter_vec(m_networkSize, 0.0);
 
     //! Observables at time=0 state
     // obs_orderParameter[time] += 1.0 / m_networkSize;
     // obs_secondMoment[time] += std::pow(1.0 / m_networkSize, 2.0);
     // obs_meanClusterSize[time] += 1.0;
+    orderParameter_vec[time] = 1.0 / m_networkSize;
 
     //* Do m-BFW algorithm until all clusters are merged to one
     while (time < m_networkSize - 1) {
@@ -208,8 +212,13 @@ void Generate::m_singleRun() {
 
             //! Net Order Parameter
             {
-                obs_netOrderParameter[m_sub_super[maximumClusterSize-1]][time].first += orderParameter;
-                ++obs_netOrderParameter[m_sub_super[maximumClusterSize-1]][time].second;
+                // obs_netOrderParameter[m_sub_super[maximumClusterSize-1]][time].first += orderParameter;
+                // ++obs_netOrderParameter[m_sub_super[maximumClusterSize-1]][time].second;
+            }
+
+            //! Single Order Parameter
+            {
+                orderParameter_vec[time] = orderParameter;
             }
 
             //! Second Moment
@@ -299,10 +308,16 @@ void Generate::m_singleRun() {
             findNewLink = false;
         }  //* End of updating upper bound
     }
+
+    //! Order Parameter single
+    {
+        obs_singleOrderParameter.emplace_back(orderParameter_vec);
+    }
 }
 
 void Generate::run(const unsigned& t_ensembleSize) {
     m_ensembleSize = t_ensembleSize;
+    obs_singleOrderParameter.reserve(t_ensembleSize);
     for (unsigned ensemble = 0; ensemble < t_ensembleSize; ++ensemble) {
         m_singleRun();
     }
@@ -325,16 +340,24 @@ void Generate::save() const {
     //! Net Order Parameter
     {
         // for (const std::string& state : std::set<std::string>{"sub", "super"}){
-        for (const std::string& state : std::set<std::string>{"sub"}){
-            const std::string directory = dataDirectory + "netOrderParameter/" + state + "/";
-            CSV::generateDirectory(directory);
-            std::map<std::pair<int, unsigned>, double> trimmed;
-            for (int t = 0; t < m_networkSize; ++t) {
-                if (obs_netOrderParameter.at(state)[t].second) {
-                    trimmed[std::pair<int, unsigned>{t, obs_netOrderParameter.at(state)[t].second}] = obs_netOrderParameter.at(state)[t].first / (double)obs_netOrderParameter.at(state)[t].second;
-                }
-            }
-            CSV::write(directory + NG, trimmed, precision);
+        //     const std::string directory = dataDirectory + "netOrderParameter/" + state + "/";
+        //     CSV::generateDirectory(directory);
+        //     std::map<std::pair<int, unsigned>, double> trimmed;
+        //     for (int t = 0; t < m_networkSize; ++t) {
+        //         if (obs_netOrderParameter.at(state)[t].second) {
+        //             trimmed[std::pair<int, unsigned>{t, obs_netOrderParameter.at(state)[t].second}] = obs_netOrderParameter.at(state)[t].first / (double)obs_netOrderParameter.at(state)[t].second;
+        //         }
+        //     }
+        //     CSV::write(directory + NG, trimmed, precision);
+        // }
+    }
+
+    //! Single Order Parameter
+    {
+        const std::string directory = dataDirectory + "singleOrderParameter/";
+        CSV::generateDirectory(directory);
+        for (unsigned ensemble=0; ensemble<m_ensembleSize; ++ensemble){
+            CSV::write(directory + fileName::base(m_networkSize, m_acceptanceThreshold) + ",E" + std::to_string(ensemble) + ".txt", obs_singleOrderParameter[ensemble]);
         }
     }
 

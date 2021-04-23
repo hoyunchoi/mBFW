@@ -18,6 +18,7 @@ observables.add("meanClusterSize")
 observables.add("orderParameterVariance")
 observables.add("interEventTime")
 observables.add("netOrderParameter")
+observables.add("singleOrderParameter")
 
 #* Observables distinguished by intervals
 observables.add("ageDist")
@@ -65,15 +66,15 @@ def readCSV(fileName):
 
 # * File Name Convections
 def __NG__(networkSize, acceptanceThreshold):
-    return "N{:.1e},G{:.1f}*-0.txt".format(networkSize, acceptanceThreshold)
+    return "N{:.1e},G{:.1f}*.txt".format(networkSize, acceptanceThreshold)
 
 
 def __NGT__(networkSize, acceptanceThreshold, t_time):
-    return "N{:.1e},G{:.1f}*,T{:.6f}*-0.txt".format(networkSize, acceptanceThreshold, t_time)
+    return "N{:.1e},G{:.1f}*,T{:.6f}*.txt".format(networkSize, acceptanceThreshold, t_time)
 
 
 def __NGOP__(networkSize, acceptanceThreshold, t_orderParameter):
-    return "N{:.1e},G{:.1f}*,OP{:.6f}*-0.txt".format(networkSize, acceptanceThreshold, t_orderParameter)
+    return "N{:.1e},G{:.1f}*,OP{:.6f}*.txt".format(networkSize, acceptanceThreshold, t_orderParameter)
 
 
 # * Get the order parameter/time value in directory
@@ -125,6 +126,13 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
         file = glob.glob(absolutePathList[type] + __NG__(networkSize, acceptanceThreshold))
 
     # * Check found files
+    if type == "singleOrderParameter":
+        data = {}
+        for ensemble,file_name in enumerate(file):
+            data[ensemble] = readCSV(file_name)
+        return data
+
+
     if (len(file) != 1):
         print("There is problem at reading " + file[0])
         return
