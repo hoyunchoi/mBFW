@@ -34,7 +34,7 @@ struct Parameter {
     const std::set<int> get_orderParameterDist_time() const;
 
    protected:
-    void m_set_points();
+    void m_set_points(const int&, const double&);
     void m_set_clusterSizeDist_orderParameter();
     void m_set_clusterSizeDist_time();
     void m_set_orderParameterDist_time();
@@ -43,15 +43,15 @@ struct Parameter {
 
 
 Parameter::Parameter(const int& t_networkSize, const double& t_acceptanceThreshold) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold) {
-    m_set_points();
+    m_set_points(t_networkSize, t_acceptanceThreshold);
     m_set_clusterSizeDist_orderParameter();
     m_set_clusterSizeDist_time();
     m_set_orderParameterDist_time();
 }
 
-void Parameter::m_set_points() {
+void Parameter::m_set_points(const int& t_networkSize, const double& t_acceptanceThreshold) {
     //* Read file
-    const std::string pointFileName = mBFW::dataDirectory + "points/" + mBFW::fileName::NG(m_networkSize, m_acceptanceThreshold);
+    const std::string pointFileName = mBFW::dataDirectory + "points/" + mBFW::fileName::NG(t_networkSize, t_acceptanceThreshold);
     std::ifstream readFile(pointFileName);
     std::string line;
     while (getline(readFile, line)) {
@@ -67,7 +67,8 @@ void Parameter::m_set_points() {
         std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
         ERROR << "Problem at reading " << pointFileName << "\n";
         ERROR.close();
-        exit(1);
+        m_set_points(10240000, t_acceptanceThreshold);
+        // exit(1);
     }
     return;
 }
