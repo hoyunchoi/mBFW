@@ -129,7 +129,6 @@ const std::map<int, int> NZ_Network::getSortedCluster(const int& t_excludeNum) c
 
     //* Exclue maximum cluster
     --result[maximumClusterSize];
-
     //* If exclude number = 2, exclude second maximum cluster
     if (t_excludeNum == 2) {
         --result[getSecondMaximumClusterSize()];
