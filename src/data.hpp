@@ -34,8 +34,7 @@ struct Data {
     template <typename T, typename TT>
     void discreteAverage(const std::string&, const std::map<T, TT>&) const;
 
-    void netOrderParameter(const std::string&) const;
-
+    void netObservable(const std::string&) const;
    protected:
     //* Directory and fild handling
     const std::string m_defineAdditionalDirectory(const std::string&, const std::string&) const;
@@ -85,7 +84,12 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     }
     if (t_checkList.at("netOrderParameter")) {
         for (const std::string& state : std::set<std::string>{"sub", "super"}){
-            netOrderParameter("netOrderParameter/" + state);
+            netObservable("netOrderParameter/" + state);
+        }
+    }
+    if (t_checkList.at("netOrderParameterVariance")) {
+        for (const std::string& state : std::set<std::string>{"sub", "super"}){
+            netObservable("netOrderParameterVariance/" + state);
         }
     }
     if (t_checkList.at("orderParameter")) {
@@ -99,6 +103,9 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     }
     if (t_checkList.at("orderParameterVariance")) {
         continuousAverage("orderParameterVariance", std::vector<double>{});
+    }
+    if (t_checkList.at("secondMaximum")){
+        continuousAverage("secondMaximum", std::vector<double>{});
     }
 }
 
@@ -370,7 +377,7 @@ void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_f
     return;
 }
 
-void Data::netOrderParameter(const std::string& t_type) const {
+void Data::netObservable(const std::string& t_type) const {
     //* Define directories and target files
     const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, t_type);
     const std::set<std::string> fileNameList = m_findTargetFileNameList(directory, m_target);

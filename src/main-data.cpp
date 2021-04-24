@@ -32,12 +32,14 @@ int main(int argc, char* argv[]) {
     checkList["interEventTime"] = false;
     checkList["interEventTimeDist"] = false;
     checkList["interEventTime_orderParameter"] = false;
-    checkList["meanClusterSize"] = false;
+    checkList["meanClusterSize"] = true;
     checkList["netOrderParameter"] = true;
-    checkList["orderParameter"] = false;
+    checkList["netOrderParameterVariance"] = true;
+    checkList["orderParameter"] = true;
     checkList["orderParameter_interEventTime"] = false;
     checkList["orderParameterDist"] = false;
-    checkList["orderParameterVariance"] = false;
+    checkList["orderParameterVariance"] = true;
+    checkList["secondMaximum"] = true;
 
     //* Generate and Run mBFW::data model
     auto start = std::chrono::system_clock::now();
