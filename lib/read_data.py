@@ -14,11 +14,12 @@ observables.add("points")
 
 #* Plain observables
 observables.add("orderParameter")
-observables.add("meanClusterSize")
-observables.add("orderParameterVariance")
-observables.add("interEventTime")
 observables.add("netOrderParameter")
 observables.add("singleOrderParameter")
+observables.add("meanClusterSize")
+observables.add("orderParameterVariance")
+observables.add("netOrderParameterVariance")
+observables.add("interEventTime")
 
 #* Observables distinguished by intervals
 observables.add("ageDist")
@@ -42,7 +43,7 @@ for observable in observables:
         absolutePathList[observable] = {}
         for state in states:
             absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
-    elif observable == "netOrderParameter":
+    elif "net" in observable:
         absolutePathList[observable] = {}
         for state in ["sub", "super"]:
             absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
@@ -118,7 +119,7 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
         file = glob.glob(absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
 
     #* Read net order parameter
-    elif type == "netOrderParameter":
+    elif "net" in type:
         file = glob.glob(absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
 
     # * Read general data
@@ -136,7 +137,7 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
     if (len(file) != 1):
         print("There is problem at reading " + file[0])
         return
-    if type == "netOrderParameter":
+    if "net" in type:
         net_t, _, net_op = readCSV(file[0])
         return net_t, net_op
     else:

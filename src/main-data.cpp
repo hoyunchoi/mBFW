@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     checkList["orderParameter_interEventTime"] = false;
     checkList["orderParameterDist"] = false;
     checkList["orderParameterVariance"] = true;
-    checkList["secondMaximum"] = true;
+    checkList["secondMaximum"] = false;
 
     //* Generate and Run mBFW::data model
     auto start = std::chrono::system_clock::now();

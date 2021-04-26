@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     model.save();
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
     std::ofstream logFile(mBFW::logDirectory + "time.log", std::ios_base::app);
-    logFile << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": " << std::setprecision(6) << sec.count() << "seconds\n";
+    logFile << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": " << std::setprecision(6) << sec.count() << " seconds\n";
 
     return 0;
 }

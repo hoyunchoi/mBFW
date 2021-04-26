@@ -147,8 +147,6 @@ const std::map<int, int> NZ_Network::getSortedCluster(const int& t_excludeNum) c
             result.erase(secondMaximumClusterSize);
         }
     }
-
-
     return result;
 }
 
