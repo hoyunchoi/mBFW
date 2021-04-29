@@ -34,11 +34,11 @@ int main(int argc, char* argv[]) {
     checkList["interEventTime_orderParameter"] = false;
     checkList["meanClusterSize"] = false;
     checkList["netOrderParameter"] = false;
-    checkList["netOrderParameterVariance"] = false;
+    checkList["netSecondMoment"] = false;
     checkList["orderParameter"] = false;
     checkList["orderParameter_interEventTime"] = false;
     checkList["orderParameterDist"] = false;
-    checkList["orderParameterVariance"] = true;
+    checkList["secondMoment"] = true;
     checkList["secondMaximum"] = false;
 
     //* Generate and Run mBFW::data model

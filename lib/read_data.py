@@ -17,8 +17,8 @@ observables.add("orderParameter")
 observables.add("netOrderParameter")
 observables.add("singleOrderParameter")
 observables.add("meanClusterSize")
-observables.add("orderParameterVariance")
-observables.add("netOrderParameterVariance")
+observables.add("secondMoment")
+observables.add("netSecondMoment")
 observables.add("interEventTime")
 
 #* Observables distinguished by intervals
@@ -37,7 +37,7 @@ observables.add("orderParameter_interEventTime")
 
 absolutePathList = {}
 for observable in observables:
-    if (observable == "clusterSizeDist") or (observable == "orderParameterDist"):
+    if  ("clusterSizeDist" in observable or "orderParameterDist" in observable):
         absolutePathList[observable] = dataDirectory + observable + "/single/"
     elif "Dist" in observable:
         absolutePathList[observable] = {}
@@ -53,15 +53,19 @@ for observable in observables:
 
 
 # * CSV Reader
-
-
-def readCSV(fileName):
+def _readVec(fileName):
     data = pd.read_csv(fileName, sep=',', header=None, dtype=np.double)
-    data = data.values.transpose()
-    if (len(data) == 0):
+    data = data.values.T
+    if len(data) == 0:
         return None
-    elif (len(data) == 1):
+    else:
         return data[0]
+
+def _readCSV(fileName):
+    data = pd.read_csv(fileName, sep=',', header=None, dtype=np.double)
+    data = data.values.T
+    if len(data) == 0:
+        return None
     else:
         return tuple([row for row in data])
 
@@ -103,10 +107,7 @@ def readPoints(networkSize, acceptanceThreshold):
                     break
     return points
 
-
 # * Read Observables
-
-
 def read(type, networkSize, acceptanceThreshold, repeater=None):
     # * Read time-accumulated distributions
     if type == "orderParameterDist":
@@ -131,21 +132,21 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
     if type == "singleOrderParameter":
         data = {}
         for ensemble,file_name in enumerate(file):
-            data[ensemble] = readCSV(file_name)
+            data[ensemble] = _readCSV(file_name)
         return data
 
 
     if (len(file) == 0):
-        print("No file at " + absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
+        print("No file at " + type + ", N: {:.1e}, G: {:.1f}".format(networkSize, acceptanceThreshold))
         return
     elif (len(file) > 1):
         print("More than 1 file: " + file[0])
         return
     if "net" in type:
-        net_t, _, net_op = readCSV(file[0])
+        net_t, _, net_op = _readCSV(file[0])
         return net_t, net_op
     else:
-        return readCSV(file[0])
+        return _readCSV(file[0])
 
 
 def opList2tList(orderParameter, opList):
@@ -213,3 +214,5 @@ def state2title(standard, target_state):
 
 if __name__ == "__main__":
     print("This is a module readData.py")
+
+

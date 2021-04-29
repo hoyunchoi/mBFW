@@ -87,9 +87,9 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
             netObservable("netOrderParameter_mc78/" + state);
         }
     }
-    if (t_checkList.at("netOrderParameterVariance")) {
+    if (t_checkList.at("netSecondMoment")) {
         for (const std::string& state : std::set<std::string>{"sub", "super"}){
-            netObservable("netOrderParameterVariance_mc78/" + state);
+            netObservable("netSecondMoment_mc78/" + state);
         }
     }
     if (t_checkList.at("orderParameter")) {
@@ -101,8 +101,8 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     if (t_checkList.at("orderParameterDist")) {
         continuousAverage_repeater("orderParameterDist");
     }
-    if (t_checkList.at("orderParameterVariance")) {
-        continuousAverage("orderParameterVariance", std::vector<double>{});
+    if (t_checkList.at("secondMoment")) {
+        continuousAverage("secondMoment", std::vector<double>{});
     }
     if (t_checkList.at("secondMaximum")){
         continuousAverage("secondMaximum", std::vector<double>{});

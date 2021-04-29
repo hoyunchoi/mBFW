@@ -50,6 +50,14 @@ Parameter::Parameter(const int& t_networkSize, const double& t_acceptanceThresho
     m_set_orderParameterDist_time();
 }
 
+const std::set<int> Parameter::m_doubleVec2intSet(const std::vector<double>& t_doubleVec) const {
+    std::set<int> intSet;
+    for (const double& e : t_doubleVec) {
+        intSet.emplace_hint(intSet.end(), (int)(e * m_networkSize));
+    }
+    return intSet;
+}
+
 void Parameter::m_set_points(const int& t_networkSize, const double& t_acceptanceThreshold) {
     //* Read file
     const std::string pointFileName = mBFW::dataDirectory + "points/" + mBFW::fileName::NG(t_networkSize, t_acceptanceThreshold);
@@ -59,6 +67,18 @@ void Parameter::m_set_points(const int& t_networkSize, const double& t_acceptanc
         for (const std::string& type : mBFW::pointTypes) {
             if (line.find(type) != line.npos) {
                 m_points[type] = std::stod(line.substr(line.find(": ") + 2));
+            }
+        }
+    }
+
+    //* For acceptance threshold=1.0, we have know values
+    if (m_acceptanceThreshold == 1.0){
+        for (const std::string& type : mBFW::pointTypes){
+            if (type.find("m_") != type.npos){
+                m_points[type] = 0.0;
+            }
+            else if (type.find("t_") != type.npos){
+                m_points[type] = 0.5;
             }
         }
     }
@@ -179,18 +199,12 @@ void Parameter::m_set_orderParameterDist_time() {
         extra = {0.778, 0.779, 0.780, 0.781, 0.782, 0.783, 0.784, 0.785, 0.786, 0.787, 0.788, 0.789, 0.790, 0.791, 0.792, 0.793, 0.794, 0.795, 0.796, 0.797, 0.798, 0.799, 0.800, 0.801, 0.802, 0.803};
     } else if (m_acceptanceThreshold == 0.9) {
         extra = {0.689, 0.690, 0.691, 0.692, 0.693, 0.694, 0.695, 0.696, 0.697, 0.698, 0.699, 0.700, 0.701, 0.702, 0.703, 0.704, 0.705, 0.706, 0.707, 0.708, 0.709, 0.710, 0.711, 0.712, 0.713, 0.714, 0.715, 0.716, 0.717, 0.718, 0.719, 0.720, 0.721, 0.722};
+    } else if (m_acceptanceThreshold == 1.0) {
+        extra = {0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.51, 0.52, 0.53, 0.54, 0.55};
     }
     m_orderParameterDist_time.insert(m_orderParameterDist_time.end(), extra.begin(), extra.end());
 
     return;
-}
-
-const std::set<int> Parameter::m_doubleVec2intSet(const std::vector<double>& t_doubleVec) const {
-    std::set<int> intSet;
-    for (const double& e : t_doubleVec) {
-        intSet.emplace_hint(intSet.end(), (int)(e * m_networkSize));
-    }
-    return intSet;
 }
 
 const std::map<std::string, int> Parameter::get_points() const {
