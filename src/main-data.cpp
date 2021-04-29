@@ -32,10 +32,10 @@ int main(int argc, char* argv[]) {
     checkList["interEventTime"] = false;
     checkList["interEventTimeDist"] = false;
     checkList["interEventTime_orderParameter"] = false;
-    checkList["meanClusterSize"] = true;
-    checkList["netOrderParameter"] = true;
-    checkList["netOrderParameterVariance"] = true;
-    checkList["orderParameter"] = true;
+    checkList["meanClusterSize"] = false;
+    checkList["netOrderParameter"] = false;
+    checkList["netOrderParameterVariance"] = false;
+    checkList["orderParameter"] = false;
     checkList["orderParameter_interEventTime"] = false;
     checkList["orderParameterDist"] = false;
     checkList["orderParameterVariance"] = true;

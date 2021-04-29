@@ -45,8 +45,9 @@ for observable in observables:
             absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
     elif "net" in observable:
         absolutePathList[observable] = {}
-        for state in ["sub", "super"]:
-            absolutePathList[observable][state] = dataDirectory + observable + "/" + state + "/"
+        for accumulate in ["", "12", "78"]:
+            for state in ["sub", "super"]:
+                absolutePathList[observable][accumulate + state] = dataDirectory + observable + "_mc" + accumulate + "/" + state + "/"
     else:
         absolutePathList[observable] = dataDirectory + observable + "/"
 
@@ -134,8 +135,11 @@ def read(type, networkSize, acceptanceThreshold, repeater=None):
         return data
 
 
-    if (len(file) != 1):
-        print("There is problem at reading " + file[0])
+    if (len(file) == 0):
+        print("No file at " + absolutePathList[type][repeater] + __NG__(networkSize, acceptanceThreshold))
+        return
+    elif (len(file) > 1):
+        print("More than 1 file: " + file[0])
         return
     if "net" in type:
         net_t, _, net_op = readCSV(file[0])

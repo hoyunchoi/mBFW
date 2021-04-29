@@ -84,12 +84,12 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     }
     if (t_checkList.at("netOrderParameter")) {
         for (const std::string& state : std::set<std::string>{"sub", "super"}){
-            netObservable("netOrderParameter/" + state);
+            netObservable("netOrderParameter_mc78/" + state);
         }
     }
     if (t_checkList.at("netOrderParameterVariance")) {
         for (const std::string& state : std::set<std::string>{"sub", "super"}){
-            netObservable("netOrderParameterVariance/" + state);
+            netObservable("netOrderParameterVariance_mc78/" + state);
         }
     }
     if (t_checkList.at("orderParameter")) {

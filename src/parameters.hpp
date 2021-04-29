@@ -29,6 +29,7 @@ struct Parameter {
     Parameter(const int&, const double&);
 
     const std::map<std::string, int> get_points() const;
+    const double get_subSuper() const;
     const std::set<int> get_clusterSizeDist_orderParameter() const;
     const std::set<int> get_clusterSizeDist_time() const;
     const std::set<int> get_orderParameterDist_time() const;
@@ -212,5 +213,19 @@ const std::set<int> Parameter::get_orderParameterDist_time() const {
     return m_doubleVec2intSet(m_orderParameterDist_time);
 }
 
+const double Parameter::get_subSuper() const {
+    //* Read file
+    const int maxNetworkSize = 10240000;
+    const std::string pointFileName = mBFW::dataDirectory + "points/" + mBFW::fileName::NG(maxNetworkSize, m_acceptanceThreshold);
+    std::ifstream readFile(pointFileName);
+    std::string line;
+    double m_c = 0.0;
+    while (getline(readFile, line)) {
+        if (line.find("m_c") != line.npos){
+            m_c = std::stod(line.substr(line.find(": ") + 2));
+        }
+    }
+    return m_c;
+}
 
 }  // namespace mBFW
