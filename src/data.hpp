@@ -60,12 +60,26 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
             continuousAverage("ageDist/" + state, std::vector<double>{});
         }
     }
+    if (t_checkList.at("ageDist_time")) {
+        const std::vector<std::string> states = m_acceptanceThreshold == 1.0 ? std::vector<std::string>{"0_A1", "C_1"} : mBFW::states;
+        for (const std::string& state : states) {
+            continuousAverage("ageDist_time/" + state, std::vector<double>{});
+        }
+    }
     if (t_checkList.at("clusterSizeDist")) {
         continuousAverage_repeater("clusterSizeDist");
+    }
+    if (t_checkList.at("clusterSizeDist_time")) {
+        continuousAverage_repeater("clusterSizeDist_time");
     }
     if (t_checkList.at("deltaUpperBoundDist")) {
         for (const std::string& state : mBFW::states) {
             continuousAverage("deltaUpperBoundDist/" + state, std::map<int, double>{});
+        }
+    }
+    if (t_checkList.at("deltaUpperBoundDist_time")) {
+        for (const std::string& state : mBFW::states) {
+            continuousAverage("deltaUpperBoundDist_time/" + state, std::map<int, double>{});
         }
     }
     if (t_checkList.at("interEventTime")) {
@@ -77,6 +91,11 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     if (t_checkList.at("interEventTimeDist")) {
         for (const std::string& state : mBFW::states) {
             continuousAverage("interEventTimeDist/" + state, std::map<int, double>{});
+        }
+    }
+    if (t_checkList.at("interEventTimeDist_time")) {
+        for (const std::string& state : mBFW::states) {
+            continuousAverage("interEventTimeDist_time/" + state, std::map<int, double>{});
         }
     }
     if (t_checkList.at("meanClusterSize")) {
@@ -101,11 +120,11 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     if (t_checkList.at("orderParameterDist")) {
         continuousAverage_repeater("orderParameterDist");
     }
-    if (t_checkList.at("secondMoment")) {
-        continuousAverage("secondMoment", std::vector<double>{});
-    }
     if (t_checkList.at("secondMaximum")){
         continuousAverage("secondMaximum", std::vector<double>{});
+    }
+    if (t_checkList.at("secondMoment")) {
+        continuousAverage("secondMoment", std::vector<double>{});
     }
 }
 
@@ -246,7 +265,7 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     }
 
     //* Check the standard of input type
-    const std::string standard = t_type == "orderParameterDist" ? "T" : "OP";
+    const std::string standard = (t_type == "orderParameterDist" || t_type == "clusterSizeDist_time") ? "T" : "OP";
 
     //* Get total ensemble size for each repeater value
     std::map<std::string, std::vector<std::vector<double>>> totalData;

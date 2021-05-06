@@ -119,7 +119,7 @@ void Parameter::m_set_clusterSizeDist_orderParameter() {
         }
     } else if (m_acceptanceThreshold == 0.5) {
         extra = {0.811, 0.812, 0.813, 0.814, 0.815, 0.816, 0.817, 0.818, 0.819, 0.821, 0.822, 0.823, 0.824, 0.825, 0.826, 0.827, 0.828, 0.829, 0.831, 0.832, 0.833, 0.834, 0.835, 0.836, 0.837, 0.838, 0.839};
-        if (m_networkSize >= 2560000) {
+        if (m_networkSize >= 5120000) {
             extra = {0.811, 0.812, 0.813, 0.814, 0.815, 0.816, 0.817, 0.818, 0.819};
         }
     } else if (m_acceptanceThreshold == 0.6) {

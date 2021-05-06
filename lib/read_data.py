@@ -3,12 +3,12 @@ sys.path.append("../library/")
 import pandas as pd
 import glob
 import numpy as np
-from dataProcess import *
+import dataProcess as dp
 
 
 dataDirectory = "../data/"
 states = ["0_A1", "A1_A2", "A2_B", "B_C", "C_1"]
-point_type = ["t_a1", "m_a1", "t_a2", "m_a2", "t_b", "m_b", "t_c", "m_c", "t_inflection", "m_inflection"]
+point_type = ["t_a1", "m_a1", "t_a2", "m_a2", "t_b", "m_b", "t_c", "m_c", "t_inflection", "m_inflection", "t_var_c", "m_var_c", "t_mcs_c", "m_mcs_c"]
 observables = set()
 observables.add("points")
 
@@ -53,19 +53,13 @@ for observable in observables:
 
 
 # * CSV Reader
-def _readVec(fileName):
-    data = pd.read_csv(fileName, sep=',', header=None, dtype=np.double)
-    data = data.values.T
-    if len(data) == 0:
-        return None
-    else:
-        return data[0]
-
 def _readCSV(fileName):
     data = pd.read_csv(fileName, sep=',', header=None, dtype=np.double)
     data = data.values.T
     if len(data) == 0:
         return None
+    elif len(data) == 1:
+        return data[0]
     else:
         return tuple([row for row in data])
 
@@ -110,7 +104,7 @@ def readPoints(networkSize, acceptanceThreshold):
 # * Read Observables
 def read(type, networkSize, acceptanceThreshold, repeater=None):
     # * Read time-accumulated distributions
-    if type == "orderParameterDist":
+    if type == "orderParameterDist" or type == "clusterSizeDist_time":
         file = glob.glob(absolutePathList[type] + __NGT__(networkSize, acceptanceThreshold, repeater))
     # * Read orderparameter-accumulated distributions
     elif type == "clusterSizeDist":
@@ -182,7 +176,7 @@ def get_sub_state(target_state):
 
 def get_ta_inflection(networkSize, orderParameter, delta=1e-4):
     time = np.arange(0.0, 1.0, 1 / networkSize)
-    bin_t, bin_op = avgLinBin(time, orderParameter, delta=delta)
+    bin_t, bin_op = dp.avgLinBin(time, orderParameter, delta=delta)
     inclination = (bin_op[1:] - bin_op[:-1]) / delta
     inflection_index = np.argmax(inclination)
 
