@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
     const unsigned ensembleSize = std::stoul(argv[3]);
     const int coreNum = std::stoi(argv[4]);
     const int randomEngineSeed = -1;    //* seed chosen by std::random_device()
+    // const int randomEngineSeed = coreNum;
 
     //* Check input network size and acceptance threshold
     if (mBFW::networkSizeList.find(networkSize) == mBFW::networkSizeList.end()) {

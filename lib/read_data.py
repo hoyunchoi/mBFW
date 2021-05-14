@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../library/")
-import pandas as pd
 import glob
+import pandas as pd
 import numpy as np
 import dataProcess as dp
 
@@ -20,6 +20,8 @@ observables.add("meanClusterSize")
 observables.add("secondMoment")
 observables.add("netSecondMoment")
 observables.add("interEventTime")
+observables.add("dynamics")
+observables.add("periodDynamics")
 
 #* Observables distinguished by intervals
 observables.add("ageDist")
