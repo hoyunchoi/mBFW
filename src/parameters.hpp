@@ -5,16 +5,15 @@
 #include <string>
 #include <vector>
 
-
 //*-------------------------
-#include <fstream>
-#include "linearAlgebra.hpp"
 #include "common.hpp"
+#include "linearAlgebra.hpp"
+#include <fstream>
 //*-------------------------
 
 namespace mBFW {
 struct Parameter {
-   protected:
+  protected:
     //* Member varialbes
     int m_networkSize;
     double m_acceptanceThreshold;
@@ -23,7 +22,7 @@ struct Parameter {
     std::vector<double> m_orderParameterDist_time;
     std::map<std::string, double> m_points;
 
-   public:
+  public:
     //* Member functions
     Parameter() {}
     Parameter(const int&, const double&);
@@ -34,14 +33,13 @@ struct Parameter {
     const std::set<int> get_clusterSizeDist_time() const;
     const std::set<int> get_orderParameterDist_time() const;
 
-   protected:
+  protected:
     void m_set_points(const int&, const double&);
     void m_set_clusterSizeDist_orderParameter();
     void m_set_clusterSizeDist_time();
     void m_set_orderParameterDist_time();
     const std::set<int> m_doubleVec2intSet(const std::vector<double>&) const;
 };
-
 
 Parameter::Parameter(const int& t_networkSize, const double& t_acceptanceThreshold) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold) {
     m_set_points(t_networkSize, t_acceptanceThreshold);
@@ -72,12 +70,11 @@ void Parameter::m_set_points(const int& t_networkSize, const double& t_acceptanc
     }
 
     //* For acceptance threshold=1.0, we have know values
-    if (m_acceptanceThreshold == 1.0){
-        for (const std::string& type : mBFW::pointTypes){
-            if (type.find("m_") != type.npos){
+    if (m_acceptanceThreshold == 1.0) {
+        for (const std::string& type : mBFW::pointTypes) {
+            if (type.find("m_") != type.npos) {
                 m_points[type] = 0.0;
-            }
-            else if (type.find("t_") != type.npos){
+            } else if (type.find("t_") != type.npos) {
                 m_points[type] = 0.5;
             }
         }
@@ -97,7 +94,9 @@ void Parameter::m_set_points(const int& t_networkSize, const double& t_acceptanc
 void Parameter::m_set_clusterSizeDist_orderParameter() {
     std::vector<double> extra;
     //* Default values
-    m_clusterSizeDist_orderParameter = m_networkSize >= 1280000 ? linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-6.0, -4.0, 100)) : linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-4.0, -2.0, 100));
+    m_clusterSizeDist_orderParameter = m_networkSize >= 1280000
+                                           ? linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-6.0, -4.0, 100))
+                                           : linearAlgebra::elementPow(10.0, linearAlgebra::linspace(-4.0, -2.0, 100));
     extra = linearAlgebra::arange(0.01, 0.99, 0.01);
     m_clusterSizeDist_orderParameter.insert(m_clusterSizeDist_orderParameter.end(), extra.begin(), extra.end());
 
@@ -235,11 +234,11 @@ const double Parameter::get_subSuper() const {
     std::string line;
     double m_c = 0.0;
     while (getline(readFile, line)) {
-        if (line.find("m_c") != line.npos){
+        if (line.find("m_c") != line.npos) {
             m_c = std::stod(line.substr(line.find(": ") + 2));
         }
     }
     return m_c;
 }
 
-}  // namespace mBFW
+} // namespace mBFW

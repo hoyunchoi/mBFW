@@ -13,7 +13,7 @@
 
 namespace mBFW {
 struct Data {
-   protected:
+  protected:
     //* Member variables
     int m_networkSize;
     double m_acceptanceThreshold;
@@ -21,7 +21,7 @@ struct Data {
     bool m_writeLog;
     std::string m_target;
 
-   public:
+  public:
     //* Member functions
     Data() {}
     Data(const int&, const double&, const bool, const bool);
@@ -35,7 +35,8 @@ struct Data {
     void discreteAverage(const std::string&, const std::map<T, TT>&) const;
 
     void netObservable(const std::string&) const;
-   protected:
+
+  protected:
     //* Directory and fild handling
     const std::string m_defineAdditionalDirectory(const std::string&, const std::string&) const;
     const std::set<std::string> m_findTargetFileNameList(const std::string&, const std::string&) const;
@@ -50,7 +51,14 @@ struct Data {
     std::tuple<std::map<T, TT>, unsigned> m_discreteAvgFile(const std::string&, const std::set<std::string>&, const std::map<T, TT>&) const;
 };
 
-Data::Data(const int& t_networkSize, const double& t_acceptanceThreshold, const bool t_deletion, const bool t_writeLog) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold), m_deletion(t_deletion), m_writeLog(t_writeLog) {
+Data::Data(const int& t_networkSize,
+           const double& t_acceptanceThreshold,
+           const bool t_deletion,
+           const bool t_writeLog)
+    : m_networkSize(t_networkSize),
+      m_acceptanceThreshold(t_acceptanceThreshold),
+      m_deletion(t_deletion),
+      m_writeLog(t_writeLog) {
     m_target = fileName::base(t_networkSize, t_acceptanceThreshold);
 }
 
@@ -102,12 +110,12 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
         continuousAverage("meanClusterSize", std::vector<double>{});
     }
     if (t_checkList.at("netOrderParameter")) {
-        for (const std::string& state : std::set<std::string>{"sub", "super"}){
+        for (const std::string& state : std::set<std::string>{"sub", "super"}) {
             netObservable("netOrderParameter_mc78/" + state);
         }
     }
     if (t_checkList.at("netSecondMoment")) {
-        for (const std::string& state : std::set<std::string>{"sub", "super"}){
+        for (const std::string& state : std::set<std::string>{"sub", "super"}) {
             netObservable("netSecondMoment_mc78/" + state);
         }
     }
@@ -120,7 +128,7 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     if (t_checkList.at("orderParameterDist")) {
         continuousAverage_repeater("orderParameterDist");
     }
-    if (t_checkList.at("secondMaximum")){
+    if (t_checkList.at("secondMaximum")) {
         continuousAverage("secondMaximum", std::vector<double>{});
     }
     if (t_checkList.at("secondMoment")) {
@@ -128,13 +136,15 @@ void Data::run(const std::map<std::string, bool>& t_checkList) {
     }
 }
 
-const std::string Data::m_defineAdditionalDirectory(const std::string& t_baseDirectory, const std::string& t_additionalDirectoryName) const {
+const std::string Data::m_defineAdditionalDirectory(const std::string& t_baseDirectory,
+                                                    const std::string& t_additionalDirectoryName) const {
     const std::string averageDirectory = t_baseDirectory + t_additionalDirectoryName + "/";
     CSV::generateDirectory(averageDirectory);
     return averageDirectory;
 }
 
-const std::set<std::string> Data::m_findTargetFileNameList(const std::string& t_directory, const std::string& t_target) const {
+const std::set<std::string> Data::m_findTargetFileNameList(const std::string& t_directory,
+                                                           const std::string& t_target) const {
     namespace fs = std::filesystem;
     std::set<std::string> targetFileNameList;
     for (const auto& file : fs::directory_iterator(t_directory)) {
@@ -162,7 +172,8 @@ void Data::m_conditionallyDeleteFile(const std::string& t_deletionFile) const {
 }
 
 template <typename T>
-std::tuple<T, unsigned> Data::m_continuousAvgFile(const std::string& t_directory, const std::set<std::string>& t_fileNameList, const T& t_format) const {
+std::tuple<T, unsigned> Data::m_continuousAvgFile(const std::string& t_directory,
+                                                  const std::set<std::string>& t_fileNameList, const T& t_format) const {
     using namespace linearAlgebra;
     unsigned totalEnsemble = 0;
     for (const std::string& fileName : t_fileNameList) {
@@ -180,7 +191,9 @@ std::tuple<T, unsigned> Data::m_continuousAvgFile(const std::string& t_directory
 
 //? T=std::pair<int,unsigned>, TT=double
 template <typename T, typename TT>
-std::tuple<std::map<T, TT>, unsigned> Data::m_discreteAvgFile(const std::string& t_directory, const std::set<std::string>& t_fileNameList, const std::map<T, TT>& t_format) const {
+std::tuple<std::map<T, TT>, unsigned> Data::m_discreteAvgFile(const std::string& t_directory,
+                                                              const std::set<std::string>& t_fileNameList,
+                                                              const std::map<T, TT>& t_format) const {
     unsigned totalEnsemble = 0;
     std::map<T, unsigned> totalEnsembleMap;
     std::map<std::string, std::map<T, TT>> totalData;
@@ -207,7 +220,8 @@ std::tuple<std::map<T, TT>, unsigned> Data::m_discreteAvgFile(const std::string&
 }
 
 template <typename T>
-void Data::continuousAverage(const std::string& t_type, const T& t_format) const {
+void Data::continuousAverage(const std::string& t_type,
+                             const T& t_format) const {
     //* Define Directories and get target files
     const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, t_type);
     const std::set<std::string> fileNameList = m_findTargetFileNameList(directory, m_target);
@@ -329,7 +343,11 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
     for (const std::pair<int, std::map<int, double>>& single : averageMap) {
         const int repeater = single.first;
         const unsigned totalEnsemble = totalEnsembleMap.at(repeater);
-        const std::string newSingleFileName = fileName::NGES(m_networkSize, m_acceptanceThreshold, totalEnsemble, standard, repeater / (double)m_networkSize, 0);
+        const std::string newSingleFileName = fileName::NGES(m_networkSize,
+                                                             m_acceptanceThreshold,
+                                                             totalEnsemble,
+                                                             standard,
+                                                             repeater / (double)m_networkSize, 0);
         newSingleFileNameList.emplace(newSingleFileName);
 
         if (singleFileNameList.find(newSingleFileName) != singleFileNameList.end()) {
@@ -357,7 +375,8 @@ void Data::continuousAverage_repeater(const std::string& t_type) const {
 }
 
 template <typename T, typename TT>
-void Data::discreteAverage(const std::string& t_type, const std::map<T, TT>& t_format) const {
+void Data::discreteAverage(const std::string& t_type,
+                           const std::map<T, TT>& t_format) const {
     //* Define directories and target files
     const std::string directory = m_defineAdditionalDirectory(mBFW::dataDirectory, t_type);
     const std::set<std::string> fileNameList = m_findTargetFileNameList(directory, m_target);
@@ -428,8 +447,8 @@ void Data::netObservable(const std::string& t_type) const {
 
     //* Average for each time
     std::map<std::pair<int, unsigned>, double> average;
-    for (const std::string& fileName : fileNameList){
-        for (const std::vector<double>& data : totalData.at(fileName)){
+    for (const std::string& fileName : fileNameList) {
+        for (const std::vector<double>& data : totalData.at(fileName)) {
             const int time = (int)data[0];
             const double ratio = data[1] / (double)totalEnsembleMap.at(time);
             average[std::pair<int, unsigned>{time, totalEnsembleMap.at(time)}] += data[2] * ratio;
@@ -438,17 +457,17 @@ void Data::netObservable(const std::string& t_type) const {
 
     //* Write the file
     const std::string newFileName = fileName::NG(m_networkSize, m_acceptanceThreshold, 0);
-    if (m_writeLog){
+    if (m_writeLog) {
         std::cout << "Writing file " << directory + newFileName << "\n";
     }
     CSV::write(directory + newFileName, average, -1);
 
     //* Delete previous averaged and trimmed data after successfully writing
-    for (const std::string& fileName : fileNameList){
-        if (fileName != newFileName){
+    for (const std::string& fileName : fileNameList) {
+        if (fileName != newFileName) {
             m_conditionallyDeleteFile(directory + fileName);
         }
     }
     return;
 }
-}  // namespace mBFW
+} // namespace mBFW

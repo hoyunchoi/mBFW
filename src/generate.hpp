@@ -46,7 +46,7 @@
 
 namespace mBFW {
 struct Generate {
-   protected:
+  protected:
     //* Member variables
     int m_networkSize;
     double m_acceptanceThreshold;
@@ -92,7 +92,7 @@ struct Generate {
     std::vector<std::vector<int>> obs_dynamics;
     std::vector<std::vector<int>> obs_periodDynamics;
 
-   public:
+  public:
     Generate() {}
     Generate(const int&, const double&, const int&, const int& t_randomEngineSeed = -1);
 
@@ -100,11 +100,18 @@ struct Generate {
     void run(const unsigned&);
     void save() const;
 
-   protected:
+  protected:
     void m_singleRun();
 };
 
-Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold, const int& t_coreNum, const int& t_randomEngineSeed) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold), m_coreNum(t_coreNum), m_randomEngineSeed(t_randomEngineSeed) {
+Generate::Generate(const int& t_networkSize,
+                   const double& t_acceptanceThreshold,
+                   const int& t_coreNum,
+                   const int& t_randomEngineSeed)
+    : m_networkSize(t_networkSize),
+      m_acceptanceThreshold(t_acceptanceThreshold),
+      m_coreNum(t_coreNum),
+      m_randomEngineSeed(t_randomEngineSeed) {
     //* Get default values from parameter
     mBFW::Parameter parameter(t_networkSize, t_acceptanceThreshold);
     m_points = parameter.get_points();
@@ -152,10 +159,10 @@ Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold
             m_state_time[t] = "C_1";
         }
         const int subSuper = (int)(m_networkSize * parameter.get_subSuper() * 7.0 / 8.0);
-        for (int m=0; m<subSuper; ++m){
+        for (int m = 0; m < subSuper; ++m) {
             m_subSuperState[m] = "sub";
         }
-        for (int m=subSuper; m<t_networkSize; ++m){
+        for (int m = subSuper; m < t_networkSize; ++m) {
             m_subSuperState[m] = "super";
         }
     }
@@ -289,7 +296,6 @@ void Generate::m_singleRun() {
                 // obs_meanClusterSize[time] += network.getMeanClusterSize();
             }
 
-
             //! Age Distribution (time)
             {
                 // for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
@@ -367,9 +373,9 @@ void Generate::m_singleRun() {
                 //* Update event time
                 eventTime = time;
 
-            }  //* End of maximum cluster size updated
+            } //* End of maximum cluster size updated
 
-        }  //* End of accepting links
+        } //* End of accepting links
 
         //* Chosen link is rejected: only trial time increased
         else if ((double)time / trialTime > m_acceptanceThreshold) {
@@ -379,9 +385,12 @@ void Generate::m_singleRun() {
             //! (Period) Dynamics
             {
                 ++periodTrialTime;
-                obs_dynamics.emplace_back(std::vector<int>{trialTime, time, network.maximumClusterSize, upperBound});
+                obs_dynamics.emplace_back(std::vector<int>{trialTime,
+                                                           time,
+                                                           network.maximumClusterSize,
+                                                           upperBound});
             }
-        }  //* End of rejecting links
+        } //* End of rejecting links
 
         //* Upper bound is changing. Going to accept chosen link right after
         else {
@@ -392,16 +401,18 @@ void Generate::m_singleRun() {
             {
                 periodTime = 0;
                 periodTrialTime = 0;
-                obs_dynamics.emplace_back(std::vector<int>{trialTime, time, network.maximumClusterSize, upperBound});
+                obs_dynamics.emplace_back(std::vector<int>{trialTime,
+                                                           time,
+                                                           network.maximumClusterSize,
+                                                           upperBound});
             }
-        }  //* End of updating upper bound
+        } //* End of updating upper bound
     }
 
     //! Single Order Parameter
     {
         // obs_singleOrderParameter.emplace_back(singleOrderParameter);
     }
-
 }
 
 void Generate::run(const unsigned& t_ensembleSize) {
@@ -417,7 +428,7 @@ void Generate::run(const unsigned& t_ensembleSize) {
 
 void Generate::save() const {
     using namespace linearAlgebra;
-    const int precision = -1;  //* Maximum precision
+    const int precision = -1; //* Maximum precision
     const std::string NG = fileName::NG(m_networkSize, m_acceptanceThreshold, m_coreNum);
     const std::string NGE = fileName::NGE(m_networkSize, m_acceptanceThreshold, m_ensembleSize, m_coreNum);
 
@@ -465,8 +476,6 @@ void Generate::save() const {
         CSV::write(periodDirectory + fileName::NG(m_networkSize, m_acceptanceThreshold, m_randomEngineSeed), obs_periodDynamics, precision);
     }
 
-
-
     //! Second Maximum
     {
         // const std::string directory = dataDirectory + "secondMaximum/";
@@ -474,7 +483,6 @@ void Generate::save() const {
         // const std::vector<double> secondMaximum = obs_secondMaximum / (double)m_ensembleSize;
         // CSV::write(directory + NGE, secondMaximum, precision);
     }
-
 
     //! Second Moment
     {
@@ -522,7 +530,7 @@ void Generate::save() const {
         // CSV::write(directory + NGE, trimmed, precision);
     }
 
-    //! Age Distribution
+    //! Age Distribution (time)
     {
         // for (const std::string& state : mBFW::states) {
         //     const std::string directory = dataDirectory + "ageDist/" + state + "/";
@@ -530,10 +538,7 @@ void Generate::save() const {
         //     const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
         //     CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
         // }
-    }
 
-    // ! Age Distribution time
-    {
         // const std::vector<std::string> states = m_acceptanceThreshold == 1.0 ? std::vector<std::string>{"0_A1", "C_1"} : mBFW::states;
         // for (const std::string& state : states){
         //     const std::string directory = dataDirectory + "ageDist_time/" + state + "/";
@@ -680,6 +685,6 @@ void Generate::save() const {
         // }
         // CSV::write(directory2 + NGE, trimmed, precision);
     }
-}  //* End of function mBFW::Generate::save
+} //* End of function mBFW::Generate::save
 
-}  // namespace mBFW
+} // namespace mBFW

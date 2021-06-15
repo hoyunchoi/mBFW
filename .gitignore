@@ -183,5 +183,6 @@ Paper Graph.ipynb
 *copy*
 run.sh
 data/*
+data_original/*
 fig/*
 text*.txt

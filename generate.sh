@@ -13,21 +13,23 @@ coreNum=$4
 name=N${networkSize}G${g}E${ensembleSize}C${coreNum}
 
 function debugBuild {
-	g++ -std=c++17 -Wall -g -fsanitize=leak -I ${common} -I ${libDir}\
-	    ${srcDir}/main-generate.cpp\
-        -o ${binDir}/${name}
+	g++ -std=c++17 -Wall -g -fsanitize=address\
+        -I ${common} -I ${libDir}\
+        -o ${binDir}/${name}\
+	    ${srcDir}/main-generate.cpp
 }
 
 function build {
-	g++ -std=c++17 -O3 -flto -march=native -I ${common} -I ${libDir} -o ${binDir}/${name} \
+	g++ -std=c++17 -O3 -flto -march=native\
+        -I ${common} -I ${libDir}\
+        -o ${binDir}/${name} \
 		${srcDir}/main-generate.cpp
 }
 
 #* Compile the source files
-build
-# debugBuild
+# build
+debugBuild
 
 #* Run
-cd ${binDir}
-./${name} ${networkSize} ${g} ${ensembleSize} ${coreNum} >> ../log/generate.log
-rm ${name}
+./${binDir}/${name} ${networkSize} ${g} ${ensembleSize} ${coreNum} >> log/generate.log
+rm ${binDir}/${name}
