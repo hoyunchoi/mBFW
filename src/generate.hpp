@@ -167,11 +167,11 @@ Generate::Generate(const int& t_networkSize, const double& t_acceptanceThreshold
     // obs_secondMoment.assign(t_networkSize, 0.0);
     // obs_interEventTime.assign(t_networkSize, std::pair<unsigned, unsigned>{0, 0});
 
-    for (const std::string& state : std::set<std::string>{"sub", "super"}){
-        obs_subSuperEnsemble[state].assign(t_networkSize, 0);
+    // for (const std::string& state : std::set<std::string>{"sub", "super"}){
+    //     obs_subSuperEnsemble[state].assign(t_networkSize, 0);
     //     obs_netOrderParameter[state].assign(t_networkSize, 0.0);
     //     obs_netSecondMoment[state].assign(t_networkSize, 0.0);
-    }
+    // }
 
     // for (const std::string& state : mBFW::states) {
     //     obs_ageDist[state].assign(t_networkSize, 0);
@@ -216,7 +216,7 @@ void Generate::m_singleRun() {
 
     //! Observables at time=0 state
     {
-        ++obs_subSuperEnsemble["sub"][time];
+        // ++obs_subSuperEnsemble["sub"][time];
         // obs_orderParameter[time] += 1.0 / m_networkSize;
         // obs_netOrderParameter["sub"][time] += 1.0 / m_networkSize;
         // obs_secondMaximum[time] += 1.0 / m_networkSize;
@@ -253,7 +253,7 @@ void Generate::m_singleRun() {
 
             //! Sub_Super Ensemble
             {
-                ++obs_subSuperEnsemble[m_subSuperState[maximumClusterSize-1]][time];
+                // ++obs_subSuperEnsemble[m_subSuperState[maximumClusterSize-1]][time];
             }
 
             //! (Net) Order Parameter
