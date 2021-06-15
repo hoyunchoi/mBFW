@@ -31,7 +31,7 @@ struct Parameter {
     const double get_subSuper() const;
     const std::set<int> get_clusterSizeDist_orderParameter() const;
     const std::set<int> get_clusterSizeDist_time() const;
-    const std::set<int> get_orderParameterDist_time() const;
+    const std::set<unsigned> get_orderParameterDist_time() const;
 
   protected:
     void m_set_points(const int&, const double&);
@@ -39,6 +39,7 @@ struct Parameter {
     void m_set_clusterSizeDist_time();
     void m_set_orderParameterDist_time();
     const std::set<int> m_doubleVec2intSet(const std::vector<double>&) const;
+    const std::set<unsigned> m_doubleVec2unsignedSet(const std::vector<double>&) const;
 };
 
 Parameter::Parameter(const int& t_networkSize, const double& t_acceptanceThreshold) : m_networkSize(t_networkSize), m_acceptanceThreshold(t_acceptanceThreshold) {
@@ -54,6 +55,14 @@ const std::set<int> Parameter::m_doubleVec2intSet(const std::vector<double>& t_d
         intSet.emplace_hint(intSet.end(), (int)(e * m_networkSize));
     }
     return intSet;
+}
+
+const std::set<unsigned> Parameter::m_doubleVec2unsignedSet(const std::vector<double>& t_doubleVec) const {
+    std::set<unsigned> unsignedSet;
+    for (const double& e : t_doubleVec) {
+        unsignedSet.emplace_hint(unsignedSet.end(), (unsigned)(e * m_networkSize));
+    }
+    return unsignedSet;
 }
 
 void Parameter::m_set_points(const int& t_networkSize, const double& t_acceptanceThreshold) {
@@ -222,8 +231,8 @@ const std::set<int> Parameter::get_clusterSizeDist_time() const {
     return m_doubleVec2intSet(m_clusterSizeDist_time);
 }
 
-const std::set<int> Parameter::get_orderParameterDist_time() const {
-    return m_doubleVec2intSet(m_orderParameterDist_time);
+const std::set<unsigned> Parameter::get_orderParameterDist_time() const {
+    return m_doubleVec2unsignedSet(m_orderParameterDist_time);
 }
 
 const double Parameter::get_subSuper() const {

@@ -12,6 +12,7 @@
 //*-------------------------
 #include <algorithm>
 #include <cmath>
+#include <unistd.h>
 
 #include "CSV.hpp"
 #include "NZ_Network.hpp"
@@ -50,6 +51,7 @@ struct Generate {
     //* Member variables
     int m_networkSize;
     double m_acceptanceThreshold;
+    unsigned m_maxTime;
     unsigned m_ensembleSize;
     int m_coreNum;
     int m_randomEngineSeed;
@@ -61,7 +63,7 @@ struct Generate {
     std::vector<std::string> m_subSuperState;
     std::set<int> m_clusterSizeDist_orderParameter;
     std::set<int> m_clusterSizeDist_time;
-    std::set<int> m_orderParameterDist_time;
+    std::set<unsigned> m_orderParameterDist_time;
 
     //* Observables
     std::vector<double> obs_orderParameter;
@@ -94,7 +96,7 @@ struct Generate {
 
   public:
     Generate() {}
-    Generate(const int&, const double&, const int&, const int& t_randomEngineSeed = -1);
+    Generate(const int&, const double&, const unsigned&, const int&, const int& t_randomEngineSeed = -1);
 
     //* Member functions
     void run(const unsigned&);
@@ -102,14 +104,17 @@ struct Generate {
 
   protected:
     void m_singleRun();
+    const double m_getAcceptanceThreshold(const int&) const;
 };
 
 Generate::Generate(const int& t_networkSize,
                    const double& t_acceptanceThreshold,
+                   const unsigned& t_maxTime,
                    const int& t_coreNum,
                    const int& t_randomEngineSeed)
     : m_networkSize(t_networkSize),
       m_acceptanceThreshold(t_acceptanceThreshold),
+      m_maxTime(t_maxTime),
       m_coreNum(t_coreNum),
       m_randomEngineSeed(t_randomEngineSeed) {
     //* Get default values from parameter
@@ -124,9 +129,9 @@ Generate::Generate(const int& t_networkSize,
     m_nodeDistribution.param(std::uniform_int_distribution<int>::param_type(0, t_networkSize - 1));
 
     //* Initialize state vectors using points
-    m_state.resize(t_networkSize);
-    m_state_time.resize(t_networkSize);
-    m_subSuperState.resize(t_networkSize);
+    m_state.resize(m_maxTime);
+    m_state_time.resize(m_maxTime);
+    m_subSuperState.resize(m_maxTime);
     {
         for (int m = 0; m < m_points.at("m_a1"); ++m) {
             m_state[m] = "0_A1";
@@ -168,11 +173,11 @@ Generate::Generate(const int& t_networkSize,
     }
 
     //* Initialize observables
-    // obs_orderParameter.assign(t_networkSize, 0.0);
-    // obs_secondMaximum.assign(t_networkSize, 0.0);
-    // obs_meanClusterSize.assign(t_networkSize, 0.0);
-    // obs_secondMoment.assign(t_networkSize, 0.0);
-    // obs_interEventTime.assign(t_networkSize, std::pair<unsigned, unsigned>{0, 0});
+    obs_orderParameter.assign(m_maxTime, 0.0);
+    obs_secondMaximum.assign(m_maxTime, 0.0);
+    obs_meanClusterSize.assign(m_maxTime, 0.0);
+    obs_secondMoment.assign(m_maxTime, 0.0);
+    obs_interEventTime.assign(m_maxTime, std::pair<unsigned, unsigned>{0, 0});
 
     // for (const std::string& state : std::set<std::string>{"sub", "super"}){
     //     obs_subSuperEnsemble[state].assign(t_networkSize, 0);
@@ -180,73 +185,83 @@ Generate::Generate(const int& t_networkSize,
     //     obs_netSecondMoment[state].assign(t_networkSize, 0.0);
     // }
 
-    // for (const std::string& state : mBFW::states) {
-    //     obs_ageDist[state].assign(t_networkSize, 0);
-    //     obs_interEventTimeDist[state].assign(t_networkSize, 0);
-    //     obs_deltaUpperBoundDist[state].assign(t_networkSize, 0);
-    //     obs_ageDist_time[state].assign(t_networkSize, 0);
-    //     obs_interEventTimeDist_time[state].assign(t_networkSize, 0);
-    //     obs_deltaUpperBoundDist_time[state].assign(t_networkSize, 0);
-    // }
+    for (const std::string& state : mBFW::states) {
+        obs_ageDist[state].assign(m_maxTime, 0);
+        obs_interEventTimeDist[state].assign(m_maxTime, 0);
+        obs_deltaUpperBoundDist[state].assign(m_maxTime, 0);
+        // obs_ageDist_time[state].assign(t_networkSize, 0);
+        // obs_interEventTimeDist_time[state].assign(t_networkSize, 0);
+        // obs_deltaUpperBoundDist_time[state].assign(t_networkSize, 0);
+    }
 
-    // for (const int& op : m_clusterSizeDist_orderParameter) {
-    //     obs_clusterSizeDist[op] = std::map<int, unsigned long long>{};
-    // }
+    for (const int& op : m_clusterSizeDist_orderParameter) {
+        obs_clusterSizeDist[op] = std::map<int, unsigned long long>{};
+    }
     // for (const int& t : m_clusterSizeDist_time) {
     //     obs_clusterSizeDist_time[t] = std::map<int, unsigned long long>{};
     // }
 
-    // for (const int& t : m_orderParameterDist_time) {
-    //     obs_orderParameterDist[t] = std::map<int, unsigned>{};
-    // }
+    for (const int& t : m_orderParameterDist_time) {
+        obs_orderParameterDist[t] = std::map<int, unsigned>{};
+    }
 
     // obs_interEventTime_orderParameter.assign(t_networkSize, std::pair<double, unsigned>{0.0, 0});
     // obs_orderParameter_interEventTime.assign(t_networkSize, std::pair<double, unsigned>{0.0, 0});
 }
 
+const double Generate::m_getAcceptanceThreshold(const int& t_upperBound) const {
+    return m_acceptanceThreshold + std::pow(2.0 * t_upperBound, -0.5);
+}
+
 void Generate::m_singleRun() {
     //* Initialize for single ensemble
     NZ_Network network(m_networkSize);
-    int time = 0;
+    unsigned time = 0;
     int periodTime = 0;
-    int trialTime = 0;
+    unsigned trialTime = 0;
     int periodTrialTime = 0;
     int eventTime = 0;
     int upperBound = 2;
     bool findNewLink = true;
-    int root1, root2, newSize;
+    int root1, root2, node1, node2, newSize;
     std::set<int> findingClusterSizeDist = m_clusterSizeDist_orderParameter;
     std::set<int> newFindingClusterSizeDist = m_clusterSizeDist_orderParameter;
     std::set<int> findingClusterSizeDist_time = m_clusterSizeDist_time;
-    std::set<int> findingOrderParameterDist = m_orderParameterDist_time;
+    std::set<unsigned> findingOrderParameterDist = m_orderParameterDist_time;
     std::vector<double> singleOrderParameter(m_networkSize, 0.0);
 
     //! Observables at time=0 state
     {
+        obs_orderParameter[time] += 1.0 / m_networkSize;
+        obs_secondMaximum[time] += 1.0 / m_networkSize;
+        obs_secondMoment[time] += std::pow(1.0 / m_networkSize, 2.0);
+        obs_meanClusterSize[time] += 1.0;
         // ++obs_subSuperEnsemble["sub"][time];
-        // obs_orderParameter[time] += 1.0 / m_networkSize;
         // obs_netOrderParameter["sub"][time] += 1.0 / m_networkSize;
-        // obs_secondMaximum[time] += 1.0 / m_networkSize;
-        // obs_secondMoment[time] += std::pow(1.0 / m_networkSize, 2.0);
         // obs_netSecondMoment["sub"][time] += std::pow(1.0 / m_networkSize, 2.0);
-        // obs_meanClusterSize[time] += 1.0;
         // singleOrderParameter[time] = 1.0 / m_networkSize;
     }
 
     //* Do m-BFW algorithm until all clusters are merged to one
-    while (time < m_networkSize - 1) {
+    while (time < m_maxTime - 1) {
         //* Find new link to add
         if (findNewLink) {
             do {
-                root1 = network.getRoot(m_nodeDistribution(m_randomEngine));
-                root2 = network.getRoot(m_nodeDistribution(m_randomEngine));
-            } while (root1 == root2);
+                node1 = m_nodeDistribution(m_randomEngine);
+                node2 = m_nodeDistribution(m_randomEngine);
+            } while (node1 == node2);
+            root1 = network.getRoot(m_nodeDistribution(m_randomEngine));
+            root2 = network.getRoot(m_nodeDistribution(m_randomEngine));
             newSize = network.getSize(root1) + network.getSize(root2);
         }
 
         //* Chosen link is accepted: time, trial time increased
         if (newSize <= upperBound) {
-            network.merge(root1, root2);
+            if (root1 == root2) {
+                ++network.linkSize;
+            } else {
+                network.merge(root1, root2);
+            }
             ++time;
             ++trialTime;
             ++periodTime;
@@ -265,7 +280,7 @@ void Generate::m_singleRun() {
 
             //! (Net) Order Parameter
             {
-                // obs_orderParameter[time] += orderParameter;
+                obs_orderParameter[time] += orderParameter;
                 // obs_netOrderParameter[m_subSuperState[maximumClusterSize-1]][time] += orderParameter;
             }
 
@@ -276,31 +291,31 @@ void Generate::m_singleRun() {
 
             //! (Period) Dynamics
             {
-                obs_dynamics.emplace_back(std::vector<int>{trialTime, time, maximumClusterSize, upperBound});
-                obs_periodDynamics.emplace_back(std::vector<int>{periodTrialTime, periodTime});
+                // obs_dynamics.emplace_back(std::vector<int>{trialTime, time, maximumClusterSize, upperBound});
+                // obs_periodDynamics.emplace_back(std::vector<int>{periodTrialTime, periodTime});
             }
 
             //! Second Maximum
             {
-                // obs_secondMaximum[time] += network.getSecondMaximumClusterSize() / (double)m_networkSize;
+                obs_secondMaximum[time] += network.getSecondMaximumClusterSize() / (double)m_networkSize;
             }
 
             //! (Net) Second Moment
             {
-                // obs_secondMoment[time] += std::pow(orderParameter, 2.0);
+                obs_secondMoment[time] += std::pow(orderParameter, 2.0);
                 // obs_netSecondMoment[m_subSuperState[maximumClusterSize-1]][time] += std::pow(orderParameter, 2.0);
             }
 
             //! Mean Cluster Size
             {
-                // obs_meanClusterSize[time] += network.getMeanClusterSize();
+                obs_meanClusterSize[time] += network.getMeanClusterSize();
             }
 
             //! Age Distribution (time)
             {
-                // for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
-                //     obs_ageDist.at(m_state[maximumClusterSize - 1])[changedAge.first] += changedAge.second;
-                // }
+                for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
+                    obs_ageDist.at(m_state[maximumClusterSize - 1])[changedAge.first] += changedAge.second;
+                }
                 // for (const std::pair<unsigned long long, int>& changedAge : network.changedAge) {
                 //     obs_ageDist_time.at(m_state_time[time])[changedAge.first] += changedAge.second;
                 // }
@@ -308,10 +323,10 @@ void Generate::m_singleRun() {
 
             //! Order Parameter Distribution
             {
-                // if (time == *findingOrderParameterDist.begin()) {
-                //     ++obs_orderParameterDist.at(time)[maximumClusterSize];
-                //     findingOrderParameterDist.erase(time);
-                // }
+                if (time == *findingOrderParameterDist.begin()) {
+                    ++obs_orderParameterDist.at(time)[maximumClusterSize];
+                    findingOrderParameterDist.erase(time);
+                }
             }
 
             //! Cluster Size Distribution time
@@ -332,34 +347,34 @@ void Generate::m_singleRun() {
 
                 //! Inter Event Time
                 {
-                    // obs_interEventTime[time].first += interEventTime;
-                    // ++obs_interEventTime[time].second;
+                    obs_interEventTime[time].first += interEventTime;
+                    ++obs_interEventTime[time].second;
                 }
 
                 //! Inter Event Time Distribution (time)
                 {
-                    // ++obs_interEventTimeDist.at(m_state[maximumClusterSize - 1])[interEventTime];
+                    ++obs_interEventTimeDist.at(m_state[maximumClusterSize - 1])[interEventTime];
                     // ++obs_interEventTimeDist_time.at(m_state_time[time])[interEventTime];
                 }
 
                 //! Delta Upper Bound Distribution (time)
                 {
-                    // ++obs_deltaUpperBoundDist.at(m_state[maximumClusterSize - 1])[deltaMaximumClusterSize];
+                    ++obs_deltaUpperBoundDist.at(m_state[maximumClusterSize - 1])[deltaMaximumClusterSize];
                     // ++obs_deltaUpperBoundDist_time.at(m_state_time[time])[deltaMaximumClusterSize];
                 }
 
                 //! Cluster Size Distribution
                 {
-                    // findingClusterSizeDist = newFindingClusterSizeDist;
-                    // for (const int& op : findingClusterSizeDist) {
-                    //     if (op < maximumClusterSize) {
-                    //         const std::map<int, int> sortedCluster = network.getSortedCluster();
-                    //         for (const std::pair<int, int>& cluster : sortedCluster) {
-                    //             obs_clusterSizeDist.at(op)[cluster.first] += cluster.second;
-                    //         }
-                    //         newFindingClusterSizeDist.erase(op);
-                    //     }
-                    // }
+                    findingClusterSizeDist = newFindingClusterSizeDist;
+                    for (const int& op : findingClusterSizeDist) {
+                        if (op < maximumClusterSize) {
+                            const std::map<int, int> sortedCluster = network.getSortedCluster();
+                            for (const std::pair<int, int>& cluster : sortedCluster) {
+                                obs_clusterSizeDist.at(op)[cluster.first] += cluster.second;
+                            }
+                            newFindingClusterSizeDist.erase(op);
+                        }
+                    }
                 }
 
                 //! Inter Event Time - Order Parameter
@@ -378,17 +393,17 @@ void Generate::m_singleRun() {
         } //* End of accepting links
 
         //* Chosen link is rejected: only trial time increased
-        else if ((double)time / trialTime > m_acceptanceThreshold) {
+        else if ((double)time / trialTime > m_getAcceptanceThreshold(upperBound)) {
             ++trialTime;
             findNewLink = true;
 
             //! (Period) Dynamics
             {
-                ++periodTrialTime;
-                obs_dynamics.emplace_back(std::vector<int>{trialTime,
-                                                           time,
-                                                           network.maximumClusterSize,
-                                                           upperBound});
+                // ++periodTrialTime;
+                // obs_dynamics.emplace_back(std::vector<int>{trialTime,
+                //                                            time,
+                //                                            network.maximumClusterSize,
+                //                                            upperBound});
             }
         } //* End of rejecting links
 
@@ -399,12 +414,12 @@ void Generate::m_singleRun() {
 
             //! (Period) Dynamics
             {
-                periodTime = 0;
-                periodTrialTime = 0;
-                obs_dynamics.emplace_back(std::vector<int>{trialTime,
-                                                           time,
-                                                           network.maximumClusterSize,
-                                                           upperBound});
+                // periodTime = 0;
+                // periodTrialTime = 0;
+                // obs_dynamics.emplace_back(std::vector<int>{trialTime,
+                //                                            time,
+                //                                            network.maximumClusterSize,
+                //                                            upperBound});
             }
         } //* End of updating upper bound
     }
@@ -434,10 +449,10 @@ void Generate::save() const {
 
     //! Order Parameter
     {
-        // const std::string directory = dataDirectory + "orderParameter/";
-        // CSV::generateDirectory(directory);
-        // const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
-        // CSV::write(directory + NGE, orderParameter, precision);
+        const std::string directory = dataDirectory + "orderParameter/";
+        CSV::generateDirectory(directory);
+        const std::vector<double> orderParameter = obs_orderParameter / (double)m_ensembleSize;
+        CSV::write(directory + NGE, orderParameter, precision);
     }
 
     //! Net Order Parameter
@@ -467,29 +482,29 @@ void Generate::save() const {
 
     //! (Period) Dynamics
     {
-        const std::string directory = dataDirectory + "dynamics/";
-        CSV::generateDirectory(directory);
-        CSV::write(directory + fileName::NG(m_networkSize, m_acceptanceThreshold, m_randomEngineSeed), obs_dynamics, precision);
+        // const std::string directory = dataDirectory + "dynamics/";
+        // CSV::generateDirectory(directory);
+        // CSV::write(directory + fileName::NG(m_networkSize, m_acceptanceThreshold, m_randomEngineSeed), obs_dynamics, precision);
 
-        const std::string periodDirectory = dataDirectory + "periodDynamics/";
-        CSV::generateDirectory(periodDirectory);
-        CSV::write(periodDirectory + fileName::NG(m_networkSize, m_acceptanceThreshold, m_randomEngineSeed), obs_periodDynamics, precision);
+        // const std::string periodDirectory = dataDirectory + "periodDynamics/";
+        // CSV::generateDirectory(periodDirectory);
+        // CSV::write(periodDirectory + fileName::NG(m_networkSize, m_acceptanceThreshold, m_randomEngineSeed), obs_periodDynamics, precision);
     }
 
     //! Second Maximum
     {
-        // const std::string directory = dataDirectory + "secondMaximum/";
-        // CSV::generateDirectory(directory);
-        // const std::vector<double> secondMaximum = obs_secondMaximum / (double)m_ensembleSize;
-        // CSV::write(directory + NGE, secondMaximum, precision);
+        const std::string directory = dataDirectory + "secondMaximum/";
+        CSV::generateDirectory(directory);
+        const std::vector<double> secondMaximum = obs_secondMaximum / (double)m_ensembleSize;
+        CSV::write(directory + NGE, secondMaximum, precision);
     }
 
     //! Second Moment
     {
-        // const std::string directory = dataDirectory + "secondMoment/";
-        // CSV::generateDirectory(directory);
-        // const std::vector<double> secondMoment = obs_secondMoment / (double)m_ensembleSize;
-        // CSV::write(directory + NGE, secondMoment, precision);
+        const std::string directory = dataDirectory + "secondMoment/";
+        CSV::generateDirectory(directory);
+        const std::vector<double> secondMoment = obs_secondMoment / (double)m_ensembleSize;
+        CSV::write(directory + NGE, secondMoment, precision);
     }
 
     //! Net Second Moment
@@ -510,34 +525,34 @@ void Generate::save() const {
 
     //! Mean Cluster Size
     {
-        // const std::string directory = dataDirectory + "meanClusterSize/";
-        // CSV::generateDirectory(directory);
-        // std::vector<double> meanClusterSize = obs_meanClusterSize / (double)m_ensembleSize;
-        // meanClusterSize.back() = 0.0;
-        // CSV::write(directory + NGE, meanClusterSize, precision);
+        const std::string directory = dataDirectory + "meanClusterSize/";
+        CSV::generateDirectory(directory);
+        std::vector<double> meanClusterSize = obs_meanClusterSize / (double)m_ensembleSize;
+        meanClusterSize.back() = 0.0;
+        CSV::write(directory + NGE, meanClusterSize, precision);
     }
 
     //! Inter Event Time
     {
-        // const std::string directory = dataDirectory + "interEventTime/";
-        // CSV::generateDirectory(directory);
-        // std::map<int, double> trimmed;
-        // for (int t = 0; t < m_networkSize; ++t) {
-        //     if (obs_interEventTime[t].second) {
-        //         trimmed[t] = obs_interEventTime[t].first / (double)obs_interEventTime[t].second;
-        //     }
-        // }
-        // CSV::write(directory + NGE, trimmed, precision);
+        const std::string directory = dataDirectory + "interEventTime/";
+        CSV::generateDirectory(directory);
+        std::map<int, double> trimmed;
+        for (int t = 0; t < m_networkSize; ++t) {
+            if (obs_interEventTime[t].second) {
+                trimmed[t] = obs_interEventTime[t].first / (double)obs_interEventTime[t].second;
+            }
+        }
+        CSV::write(directory + NGE, trimmed, precision);
     }
 
     //! Age Distribution (time)
     {
-        // for (const std::string& state : mBFW::states) {
-        //     const std::string directory = dataDirectory + "ageDist/" + state + "/";
-        //     CSV::generateDirectory(directory);
-        //     const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
-        //     CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
-        // }
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "ageDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            const std::vector<double> ageDist(obs_ageDist.at(state).begin(), obs_ageDist.at(state).end());
+            CSV::write(directory + NGE, ageDist / (double)m_ensembleSize, precision);
+        }
 
         // const std::vector<std::string> states = m_acceptanceThreshold == 1.0 ? std::vector<std::string>{"0_A1", "C_1"} : mBFW::states;
         // for (const std::string& state : states){
@@ -548,20 +563,19 @@ void Generate::save() const {
         // }
     }
 
-
     //! Inter Event Time Distribution (time)
     {
-        // for (const std::string& state : mBFW::states) {
-        //     const std::string directory = dataDirectory + "interEventTimeDist/" + state + "/";
-        //     CSV::generateDirectory(directory);
-        //     std::map<int, double> trimmed;
-        //     for (int iet = 0; iet < m_networkSize; ++iet) {
-        //         if (obs_interEventTimeDist.at(state)[iet]) {
-        //             trimmed[iet] = obs_interEventTimeDist.at(state)[iet] / (double)m_ensembleSize;
-        //         }
-        //     }
-        //     CSV::write(directory + NGE, trimmed, precision);
-        // }
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "interEventTimeDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            std::map<int, double> trimmed;
+            for (int iet = 0; iet < m_networkSize; ++iet) {
+                if (obs_interEventTimeDist.at(state)[iet]) {
+                    trimmed[iet] = obs_interEventTimeDist.at(state)[iet] / (double)m_ensembleSize;
+                }
+            }
+            CSV::write(directory + NGE, trimmed, precision);
+        }
 
         // for (const std::string& state : mBFW::states) {
         //     const std::string directory = dataDirectory + "interEventTimeDist_time/" + state + "/";
@@ -578,17 +592,17 @@ void Generate::save() const {
 
     //! Delta Upper Bound Distribution (time)
     {
-        // for (const std::string& state : mBFW::states) {
-        //     const std::string directory = dataDirectory + "deltaUpperBoundDist/" + state + "/";
-        //     CSV::generateDirectory(directory);
-        //     std::map<int, double> trimmed;
-        //     for (int dk = 0; dk < m_networkSize; ++dk) {
-        //         if (obs_deltaUpperBoundDist.at(state)[dk]) {
-        //             trimmed[dk] = obs_deltaUpperBoundDist.at(state)[dk] / (double)m_ensembleSize;
-        //         }
-        //     }
-        //     CSV::write(directory + NGE, trimmed, precision);
-        // }
+        for (const std::string& state : mBFW::states) {
+            const std::string directory = dataDirectory + "deltaUpperBoundDist/" + state + "/";
+            CSV::generateDirectory(directory);
+            std::map<int, double> trimmed;
+            for (int dk = 0; dk < m_networkSize; ++dk) {
+                if (obs_deltaUpperBoundDist.at(state)[dk]) {
+                    trimmed[dk] = obs_deltaUpperBoundDist.at(state)[dk] / (double)m_ensembleSize;
+                }
+            }
+            CSV::write(directory + NGE, trimmed, precision);
+        }
 
         // for (const std::string& state : mBFW::states) {
         //     const std::string directory = dataDirectory + "deltaUpperBoundDist_time/" + state + "/";
@@ -605,22 +619,22 @@ void Generate::save() const {
 
     //! Cluster Size Distribution
     {
-        // const std::string directory = dataDirectory + "clusterSizeDist/";
-        // CSV::generateDirectory(directory);
-        // std::vector<std::vector<double>> totalData;
-        // totalData.reserve(m_clusterSizeDist_orderParameter.size());
-        // for (const int& op : m_clusterSizeDist_orderParameter) {
-        //     std::vector<double> clusterSizeDist;
-        //     clusterSizeDist.reserve(2 + 2 * obs_clusterSizeDist.at(op).size());
-        //     clusterSizeDist.emplace_back((double)op);
-        //     clusterSizeDist.emplace_back((double)m_ensembleSize);
-        //     for (const std::pair<int, unsigned long long>& csd : obs_clusterSizeDist.at(op)) {
-        //         clusterSizeDist.emplace_back((double)csd.first);
-        //         clusterSizeDist.emplace_back(csd.second / (double)m_ensembleSize);
-        //     }
-        //     totalData.emplace_back(clusterSizeDist);
-        // }
-        // CSV::write(directory + NG, totalData, precision);
+        const std::string directory = dataDirectory + "clusterSizeDist/";
+        CSV::generateDirectory(directory);
+        std::vector<std::vector<double>> totalData;
+        totalData.reserve(m_clusterSizeDist_orderParameter.size());
+        for (const int& op : m_clusterSizeDist_orderParameter) {
+            std::vector<double> clusterSizeDist;
+            clusterSizeDist.reserve(2 + 2 * obs_clusterSizeDist.at(op).size());
+            clusterSizeDist.emplace_back((double)op);
+            clusterSizeDist.emplace_back((double)m_ensembleSize);
+            for (const std::pair<int, unsigned long long>& csd : obs_clusterSizeDist.at(op)) {
+                clusterSizeDist.emplace_back((double)csd.first);
+                clusterSizeDist.emplace_back(csd.second / (double)m_ensembleSize);
+            }
+            totalData.emplace_back(clusterSizeDist);
+        }
+        CSV::write(directory + NG, totalData, precision);
     }
 
     //! Cluster Size Distribution time
@@ -645,22 +659,22 @@ void Generate::save() const {
 
     //! Order Parameter Distribution
     {
-        // const std::string directory = dataDirectory + "orderParameterDist/";
-        // CSV::generateDirectory(directory);
-        // std::vector<std::vector<double>> totalData;
-        // totalData.reserve(m_orderParameterDist_time.size());
-        // for (const int& t : m_orderParameterDist_time) {
-        //     std::vector<double> orderParameterDist;
-        //     orderParameterDist.reserve(2 + 2 * obs_orderParameterDist.at(t).size());
-        //     orderParameterDist.emplace_back((double)t);
-        //     orderParameterDist.emplace_back((double)m_ensembleSize);
-        //     for (const std::pair<int, unsigned>& opd : obs_orderParameterDist.at(t)) {
-        //         orderParameterDist.emplace_back((double)opd.first);
-        //         orderParameterDist.emplace_back(opd.second / (double)m_ensembleSize);
-        //     }
-        //     totalData.emplace_back(orderParameterDist);
-        // }
-        // CSV::write(directory + NG, totalData, precision);
+        const std::string directory = dataDirectory + "orderParameterDist/";
+        CSV::generateDirectory(directory);
+        std::vector<std::vector<double>> totalData;
+        totalData.reserve(m_orderParameterDist_time.size());
+        for (const int& t : m_orderParameterDist_time) {
+            std::vector<double> orderParameterDist;
+            orderParameterDist.reserve(2 + 2 * obs_orderParameterDist.at(t).size());
+            orderParameterDist.emplace_back((double)t);
+            orderParameterDist.emplace_back((double)m_ensembleSize);
+            for (const std::pair<int, unsigned>& opd : obs_orderParameterDist.at(t)) {
+                orderParameterDist.emplace_back((double)opd.first);
+                orderParameterDist.emplace_back(opd.second / (double)m_ensembleSize);
+            }
+            totalData.emplace_back(orderParameterDist);
+        }
+        CSV::write(directory + NG, totalData, precision);
     }
 
     //! Inter Event Time - Order Parameter

@@ -12,8 +12,9 @@ int main(int argc, char* argv[]) {
     const double acceptanceThreshold = std::stod(argv[2]);
     const unsigned ensembleSize = std::stoul(argv[3]);
     const int coreNum = std::stoi(argv[4]);
+    const unsigned maxTime = (unsigned)(1.5 * networkSize);
     const int randomEngineSeed = -1;    //* seed chosen by std::random_device()
-    // const int randomEngineSeed = coreNum;
+    // const int randomEngineSeed = 1;
 
     //* Check input network size and acceptance threshold
     if (mBFW::networkSizeList.find(networkSize) == mBFW::networkSizeList.end()) {
@@ -37,9 +38,9 @@ int main(int argc, char* argv[]) {
 
     //* Generate and Run mBFW::Generate model
     const auto start = std::chrono::system_clock::now();
-    mBFW::Generate model(networkSize, acceptanceThreshold, coreNum, randomEngineSeed);
+    mBFW::Generate model(networkSize, acceptanceThreshold, maxTime, coreNum, randomEngineSeed);
     model.run(ensembleSize);
-    // model.save();
+    model.save();
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
     std::ofstream logFile(mBFW::logDirectory + "time.log", std::ios_base::app);
     logFile << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": " << std::setprecision(6) << sec.count() << " seconds\n";

@@ -7,7 +7,7 @@
 #include "stringFormat.hpp"
 
 namespace mBFW {
-const std::string dataDirectory = "data/";
+const std::string dataDirectory = "data_original/";
 const std::string logDirectory = "log/";
 const std::vector<std::string> states = {"0_A1", "A1_A2", "A2_B", "B_C", "C_1"};
 const std::vector<std::string> pointTypes = {"m_a1", "m_a2", "m_b", "m_c", "m_inflection", "t_a1", "t_a2", "t_b", "t_c", "t_inflection"};
