@@ -1,49 +1,60 @@
+#include <array>
 #include <chrono>
-#include <fstream>
 #include <iostream>
+#include <string>
+#include <utility>
 
-#include "common.hpp"
-#include "generate.hpp"
-
+#include "CheckList.hpp"
+#include "Common.hpp"
+#include "Generator.hpp"
+#include "Logger.hpp"
+#include "Name.hpp"
 
 int main(int argc, char* argv[]) {
     //* Get input parameters
-    const int networkSize = std::stoi(argv[1]);
-    const double acceptanceThreshold = std::stod(argv[2]);
-    const unsigned ensembleSize = std::stoul(argv[3]);
-    const int coreNum = std::stoi(argv[4]);
-    const unsigned maxTime = (unsigned)(1.5 * networkSize);
-    const int randomEngineSeed = -1;    //* seed chosen by std::random_device()
-    // const int randomEngineSeed = 1;
+    // const int network_size = std::stoi(argv[1]);
+    // const double acceptance_threshold = std::stod(argv[2]);
+    // const unsigned ensemble_size = std::stoul(argv[3]);
+    // const int core_num = std::stoi(argv[4]);
+    // const int random_engine_seed = -1;    //* seed chosen by std::random_device()
 
-    //* Check input network size and acceptance threshold
-    if (mBFW::networkSizeList.find(networkSize) == mBFW::networkSizeList.end()) {
-        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
-        ERROR << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": Not valid network size " << networkSize << "\n";
-        ERROR.close();
+    const int network_size = 10000;
+    const double acceptance_threshold = 0.5;
+    const unsigned ensemble_size = 10000;
+    const int core_num = 2;
+    const int random_engine_seed = -1;  //* seed chosen by std::random_device()
+
+    //* Generate Name instance
+    mBFW::Name name(network_size,
+                    acceptance_threshold,
+                    ensemble_size,
+                    core_num);
+
+    //* Generate log files
+    mBFW::Logger error_logger("error");
+    mBFW::Logger time_logger("time");
+
+    //* Check input values
+    if (not mBFW::check_network_size(network_size)) {
+        error_logger.log(name.NGE + ": Not valid network size");
         return -1;
     }
-    if (mBFW::acceptanceThresholdList.find(acceptanceThreshold) == mBFW::acceptanceThresholdList.end()) {
-        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
-        ERROR << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": Not valid acceptance threshold " << acceptanceThreshold << "\n";
-        ERROR.close();
+    if (not mBFW::check_acceptance_threshold(acceptance_threshold)) {
+        error_logger.log(name.NGE + ": Not valid acceptance threshold");
         return -1;
     }
-    if (coreNum <= 0) {
-        std::ofstream ERROR(mBFW::logDirectory + "ERROR.log", std::ios_base::app);
-        ERROR << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": Not valid core number " << coreNum << "\n";
-        ERROR.close();
+    if (core_num <= 0) {
+        error_logger.log(name.NGE + ": Not valid core number " + std::to_string(core_num));
         return -1;
     }
 
-    //* Generate and Run mBFW::Generate model
+    //* Generate generator instance
     const auto start = std::chrono::system_clock::now();
-    mBFW::Generate model(networkSize, acceptanceThreshold, maxTime, coreNum, randomEngineSeed);
-    model.run(ensembleSize);
-    model.save();
+    mBFW::Generator generator(name, random_engine_seed);
+    generator.run();
+    generator.save();
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
-    std::ofstream logFile(mBFW::logDirectory + "time.log", std::ios_base::app);
-    logFile << mBFW::fileName::NGE(networkSize, acceptanceThreshold, ensembleSize, coreNum) << ": " << std::setprecision(6) << sec.count() << " seconds\n";
+    time_logger.log(name.NGE + ": " + std::to_string(sec.count()) + "seconds");
 
     return 0;
 }
