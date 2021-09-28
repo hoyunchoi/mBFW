@@ -5,7 +5,12 @@ libDir=/pds/pds11/hoyun/mBFW/lib
 binDir=/pds/pds11/hoyun/mBFW/bin
 library=/pds/pds11/hoyun/library
 
-name=test
+N=$1
+G=$2
+E=$3
+C=$4
+
+name=N${N}G${G}E${E}C${C}
 
 function debugBuild {
 	g++ -std=c++17 -Wall -g -fsanitize=address\
@@ -26,5 +31,5 @@ function build {
 build
 
 #* Run
-${binDir}/${name}
+${binDir}/${name} $N $G $E $C
 rm ${binDir}/${name}

@@ -16,8 +16,8 @@ const std::set<unsigned> network_size_set = {10000, 20000, 40000, 80000, 160000,
 const std::set<double> acceptance_threshold_set = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 
 //* Checklist
-constexpr std::array<std::pair<std::string_view, bool>, 6> observables{{{"order_parameter", true},
-                                                                        {"second_maximum", true},
+constexpr std::array<std::pair<std::string_view, bool>, 6> observables{{{"maximum_cluster_size", true},
+                                                                        {"second_maximum_cluster_size", true},
                                                                         {"second_moment", true},
                                                                         {"mean_cluster_size", true},
                                                                         {"inter_event_time", true},

@@ -1,8 +1,6 @@
-#include <array>
 #include <chrono>
 #include <iostream>
 #include <string>
-#include <utility>
 
 #include "CheckList.hpp"
 #include "Common.hpp"
@@ -12,17 +10,11 @@
 
 int main(int argc, char* argv[]) {
     //* Get input parameters
-    // const int network_size = std::stoi(argv[1]);
-    // const double acceptance_threshold = std::stod(argv[2]);
-    // const unsigned ensemble_size = std::stoul(argv[3]);
-    // const int core_num = std::stoi(argv[4]);
-    // const int random_engine_seed = -1;    //* seed chosen by std::random_device()
-
-    const int network_size = 10000;
-    const double acceptance_threshold = 0.5;
-    const unsigned ensemble_size = 10000;
-    const int core_num = 2;
-    const int random_engine_seed = -1;  //* seed chosen by std::random_device()
+    const int network_size = std::stoi(argv[1]);
+    const double acceptance_threshold = std::stod(argv[2]);
+    const unsigned ensemble_size = std::stoul(argv[3]);
+    const int core_num = std::stoi(argv[4]);
+    const int random_engine_seed = -1;    //* seed chosen by std::random_device()
 
     //* Generate Name instance
     mBFW::Name name(network_size,
@@ -54,7 +46,7 @@ int main(int argc, char* argv[]) {
     generator.run();
     generator.save();
     std::chrono::duration<double> sec = std::chrono::system_clock::now() - start;
-    time_logger.log(name.NGE + ": " + std::to_string(sec.count()) + "seconds");
+    time_logger.log(name.NGE + ": " + std::to_string(sec.count()));
 
     return 0;
 }
