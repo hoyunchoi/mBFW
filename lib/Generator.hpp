@@ -265,13 +265,15 @@ void Generator::save() const {
     if (check_list.at("inter_event_time")) {
         const std::string directory = data_dir + "inter_event_time/";
         CSV::generateDirectory(directory);
-        std::map<int, double> inter_event_time;
+        std::vector<std::vector<double>> inter_event_time;
+        inter_event_time.reserve(network_size);
         for (int t = 0; t < network_size; ++t) {
             if (obs_inter_event_time[t].second) {
-                inter_event_time[t] = obs_inter_event_time[t].first / (double)obs_inter_event_time[t].second;
+                inter_event_time.emplace_back(std::vector<double>{(double)t,
+                                                                  obs_inter_event_time[t].first / (double)obs_inter_event_time[t].second,
+                                                                  (double)obs_inter_event_time[t].second});
             }
         }
-
         CSV::write(directory + name.get_NGE(), inter_event_time, precision);
     }
 

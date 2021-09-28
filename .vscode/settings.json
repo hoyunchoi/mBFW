@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "/pds/pds11/hoyun/library"
+    ]
+}
